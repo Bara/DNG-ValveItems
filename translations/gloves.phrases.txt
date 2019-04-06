@@ -1,0 +1,82 @@
+"Phrases"
+{
+	"No Permissions"
+	{
+		"#format"		"{1:s}"
+		"en"			"{1} You have no permissions"
+		"de"			"{1} Du hast keine Berechtigungen"
+	}
+
+    "Choose a Glove Currently"
+	{
+		"#format"		"{1:s}"
+		"en"			"Chosse a Glove\nCurrently: {1}"
+		"de"			"Wähle ein Handschuh\nAktuelles: {1}"
+	}
+	
+	"Choose a Glove"
+	{
+		"en"			"Chosse a Glove:"
+		"de"			"Wähle ein Handschuh:"
+	}
+
+    "Choose a Skin Currently"
+	{
+		"#format"		"{1:s}"
+		"en"			"Chosse a Skin\nGlove: {1}"
+		"de"			"Wähle ein Skin\nHandschuh: {1}"
+	}
+	
+	"Choose a Skin"
+	{
+		"en"			"Chosse a Skin:"
+		"de"			"Wähle ein Skin:"
+	}
+
+	"Glove Choosed"
+	{
+		"#format"		"{1:s},{2:s}"
+		"en"			"{1} You've choosen: {green}{2}"
+		"de"			"{1} Sie haben gewählt: {green}{2}"
+	}
+
+	"Remaining"
+	{
+		"#format"		"{1:s},{2:d}"
+		"en"			"{1} You can use this in {green}{2} seconds{default}!"
+		"de"			"{1} Du kannst dies erst wieder in {green}{2} Sekunden {default}benutzen!"
+	}
+
+	"Remaining One"
+	{
+		"#format"		"{1:s}"
+		"en"			"{1} You can use this in {green}one second{default}!"
+		"de"			"{1} Du kannst dies erst wieder in {green}einer Sekunde {default}benutzen!"
+	}
+
+    "Suitable: Yes"
+    {
+		"#format"		"{1:s}"
+		"en"			"{1} Only suitable skins will be shown"
+		"de"			"{1} Dir werden nur passende Skins angezeigt"
+    }
+
+    "Suitable: All"
+    {
+		"#format"		"{1:s}"
+		"en"			"{1} All skins will be shown"
+		"de"			"{1} Dir werden alle Skins angezeigt"
+    }
+
+    "Menu Suitable: Yes"
+    {
+		"en"			"Show only suitable skins"
+		"de"			"Nur passende Skins anzeigen"
+    }
+
+    "Menu Suitable: All"
+    {
+		"en"			"Show all skins"
+		"de"			"Alle skins anzeigen"
+    }
+}

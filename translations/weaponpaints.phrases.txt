@@ -1,0 +1,178 @@
+"Phrases"
+{
+	
+	"Choose Weapon"
+	{
+		"en"			"Choose weapon"
+		"de"			"Wähle eine Waffe"
+	}
+
+	"Choose Weapon Skin"
+	{
+		"#format"		"{1:s}"
+		"en"			"Choose a skin for\n{1}"
+		"de"			"Wähle ein Skin für\n{1}"
+	}
+
+	"Choose Weapon Skin Site"
+	{
+		"#format"		"{1:s},{2:d},{3:d}"
+		"en"			"Choose a skin for\n{1}\nSite {2} of {3}"
+		"de"			"Wähle ein Skin für\n{1}\nSeite {2} von {3}"
+	}
+
+	"Too short"
+	{
+		"#format"		"{1:s}"
+		"en"			"{1} Nametag is too short!"
+		"de"			"{1} Nametag ist zu kurz!"
+	}
+
+	"Dead Player"
+	{
+		"#format"		"{1:s}"
+		"en"			"{1} You're death!"
+		"de"			"{1} Du bist tot!"
+	}
+
+	"Exit"
+	{
+		"en"			"Exit"
+		"de"			"Schliessen"
+	}
+
+	"Choosed Skin"
+	{
+		"#format"		"{1:s},{2:s},{3:s}"
+		"en"			"{1} You've choosen the skin {green}{2} {default}for the weapon {green}%s"
+		"de"			"{1} Sie haben den Skin {green}{2} {default}für die Waffe {green}{3} {default}ausgewählt."
+	}
+
+	"Adjust Wear"
+	{
+		"#format"		"{1:s},{2:f}"
+		"en"			"Adjust wear of {1}\nCurrent wear: {2}"
+		"de"			"Wear anpassen von\n{1}\nAktueller Wear: {2}"
+	}
+
+	"Default Wear"
+	{
+		"en"			"Default (0.0001)"
+		"de"			"Standard (0.0001)"
+	}
+
+	"Menu All skins on"
+	{
+		"en"			"All skins"
+		"de"			"Alle Skins"
+	}
+
+	"All skins on"
+	{
+		"en"			"All skins will be shown"
+		"de"			"Alle Skins werden nun angezeigt"
+	}
+
+	"All skins off"
+	{
+		"en"			"Only appropriate skins will be shown"
+		"de"			"Nur passende Skins werden angezeigt"
+	}
+
+	"Menu All skins off"
+	{
+		"en"			"Only appropriate skins"
+		"de"			"Nur passende Skins"
+	}
+
+	"Menu Change nametag"
+	{
+		"en"			"Change nametag"
+		"de"			"Nametag ändern"
+	}
+
+	"Menu Choose category"
+	{
+		"en"			"Choose category"
+		"de"			"Wähle eine Kategorie"
+	}
+
+	"Menu Change Current Weapon"
+	{
+		"en"			"Change current weapon skin"
+		"de"			"Skin der aktuellen Waffe ändern"
+	}
+
+	"No Permissions"
+	{
+		"#format"		"{1:s}"
+		"en"			"{1} You don't have the Permissions"
+		"de"			"{1} Du hast nicht die Berechtigungen"
+	}
+
+	"Cant change"
+	{
+		"#format"		"{1:s}"
+		"en"			"You can't change that. ({1})"
+		"de"			"Du kannst dies nicht ändern. ({1})"
+	}
+
+	"Default"
+	{
+		"en"			"Default"
+		"de"			"Standard"
+	}
+
+	"Random"
+	{
+		"en"			"Random"
+		"de"			"Zufällig"
+	}
+
+	"Menu Change Weapon"
+	{
+		"en"			"Change skin of a weapon"
+		"de"			"Skin einer Waffe ändern"
+	}
+
+	"Menu Change Wear"
+	{
+		"en"			"Adjust wear"
+		"de"			"Wear anpassen"
+	}
+
+	"Nametag Menu"
+	{
+		"#format"		"{1:s}"
+		"en"			"Change nametag of {1}\nTo change this nametag:\nType !nametag <Name>\nTo remove nametag:\nType !nametag DELETE"
+		"de"			"Nametag anpassen von {1}\nUm den Nametag zu ändern gibt\n!nametag <Name> ein\n \nUm den Nametag zu löschen gibt folgendes ein:\n!nametag DELETE"
+	}
+
+	"Detected IP"
+	{
+		"#format"		"{1:s}"
+		"en"			"{1} Invalid name ({darkred}ip detected{default}!)"
+		"de"			"{1} Ungültiger Name ({darkred}IP gefunden{default}!)"
+	}
+
+	"Detected URL"
+	{
+		"#format"		"{1:s}"
+		"en"			"{1} Invalid name ({darkred}url detected{default}!)"
+		"de"			"{1} Ungültiger Name ({darkred}URL gefunden{default}!)"
+	}
+
+	"Remaining"
+	{
+		"#format"		"{1:s},{2:d}"
+		"en"			"{1} You can use this in {default}{2} seconds{default}!"
+		"de"			"{1} Du kannst dies erst wieder in {default}{2} Sekunden {default}benutzen!"
+	}
+
+	"Remaining One"
+	{
+		"#format"		"{1:s}"
+		"en"			"{1} You can use this in {default}one second{default}!"
+		"de"			"{1} Du kannst dies erst wieder in {default}einer Sekunde {default}benutzen!"
+	}
+}
