@@ -263,7 +263,8 @@ INCLUDES
 #include <csgoitems> 
 #include <SteamWorks> 
 #include <autoexecconfig> 
-#include <regex> 
+#include <regex>
+#include <dynamic>
 
 /****************************************************************************************************
 DEFINES
@@ -346,13 +347,13 @@ bool g_bHibernation = false;
 STRINGS.
 *****************************************************************************************************/
 char g_szWeaponInfo[1000][22][48];
-char g_szPaintInfo[1000][22][96];
+char g_szPaintInfo[1000][22][192];
 char g_szMusicKitInfo[1000][3][48];
-char g_szGlovesInfo[1000][22][96];
+char g_szGlovesInfo[1000][22][192];
 char g_szSprayInfo[1000][22][128];
 char g_szItemSetInfo[1000][3][48];
-char g_szLangPhrases[2198296];
-char g_szSchemaPhrases[2198296];
+char g_szLangPhrases[21982192];
+char g_szSchemaPhrases[21982192];
 char g_szCDNPhrases[2000][384];
 
 /****************************************************************************************************
@@ -802,7 +803,7 @@ public Action Timer_SyncLanguage(Handle hTimer)
 	Handle hLanguageFile = OpenFile("resource/csgo_english_utf8.txt", "r");
 	
 	if (hLanguageFile != null) {
-		ReadFileString(hLanguageFile, g_szLangPhrases, 2198296);
+		ReadFileString(hLanguageFile, g_szLangPhrases, 21982192);
 	}
 	else {
 		g_bLanguageDownloading = false;
@@ -875,17 +876,31 @@ public Action Timer_SyncSchema(Handle hTimer)
 	if (g_bRoundEnd) {
 		return Plugin_Continue;
 	}
+
+	Dynamic dItemsGame = Dynamic();
+	Dynamic_ReadKeyValues(dItemsGame, "scripts/items/items_game.txt", 2048, PK_ReadDynamicKeyValue);
+	Dynamic_GetDynamic(dItemsGame, "items");
+	Dynamic_GetDynamic(dItemsGame, "paint_kits");
+	Dynamic_GetDynamic(dItemsGame, "music_definitions");
+	Dynamic_GetDynamic(dItemsGame, "item_sets");
+	Dynamic_GetDynamic(dItemsGame, "sticker_kits");
+	Dynamic_GetDynamic(dItemsGame, "paint_kits_rarity");
+	Dynamic_GetDynamic(dItemsGame, "used_by_classes");
+	Dynamic_GetDynamic(dItemsGame, "attributes");
+	Dynamic_GetDynamic(dItemsGame, "prefabs");
+	Dynamic_WriteKeyValues(dItemsGame, "scripts/items/items_game_dynamic.txt", "items_game");
+	dItemsGame.Dispose(true);
 	
-	Handle hSchemaFile = OpenFile("scripts/items/items_game.txt", "r");
+	Handle hSchemaFile = OpenFile("scripts/items/items_game_dynamic.txt", "r");
 	
 	if (hSchemaFile != null) {
-		ReadFileString(hSchemaFile, g_szSchemaPhrases, 2198296);
+		ReadFileString(hSchemaFile, g_szSchemaPhrases, 21982192);
 	} else {
 		g_bItemsSyncing = false;
 		
 		delete hSchemaFile;
 		
-		DeleteFile("scripts/items/items_game.txt");
+		DeleteFile("scripts/items/items_game_dynamic.txt");
 		
 		if (g_iSchemaDownloadAttempts < 10) {
 			RetrieveItemSchema();
@@ -916,6 +931,46 @@ public Action Timer_SyncSchema(Handle hTimer)
 	}
 	
 	return Plugin_Stop;
+}
+
+public Action PK_ReadDynamicKeyValue(Dynamic obj, const char[] member, int depth)
+{
+	// Allow the basekey (depth=0) to be loaded
+	if (depth == 0)
+		return Plugin_Continue;
+	
+	// Check all subkeys (depth=1) within the basekey (depth=0)
+	if (depth == 1)
+	{
+		// Allow these subkeys (depth=1) in the basekey (depth=0) to load
+		if (StrEqual(member, "items"))
+			return Plugin_Continue;
+		if (StrEqual(member, "paint_kits"))
+			return Plugin_Continue;
+		if (StrEqual(member, "music_definitions"))
+			return Plugin_Continue;
+		if (StrEqual(member, "item_sets"))
+			return Plugin_Continue;
+		if (StrEqual(member, "sticker_kits"))
+			return Plugin_Continue;
+		if (StrEqual(member, "paint_kits_rarity"))
+			return Plugin_Continue;
+		if (StrEqual(member, "used_by_classes"))
+			return Plugin_Continue;
+		if (StrEqual(member, "attributes"))
+			return Plugin_Continue;
+		if (StrEqual(member, "prefabs"))
+			return Plugin_Continue;
+
+		else
+		{
+			// Block all other subkeys (depth=1)
+			return Plugin_Stop;
+		}
+	}
+	
+	// Let all subkeys in higher depths load (depth>1)
+	return Plugin_Continue;
 }
 
 public void SyncItemData()
@@ -958,7 +1013,7 @@ public void SyncItemData()
 	
 	g_hItemsKv = CreateKeyValues("items_game");
 	
-	if (!FileToKeyValues(g_hItemsKv, "scripts/items/items_game.txt")) {
+	if (!FileToKeyValues(g_hItemsKv, "scripts/items/items_game_dynamic.txt")) {
 		Call_StartForward(g_hOnPluginEnd);
 		Call_Finish();
 		SetFailState("Unable to Process Item Schema");
@@ -970,7 +1025,7 @@ public void SyncItemData()
 		SetFailState("Unable to find Item keyvalues");
 	}
 	
-	char szBuffer[128]; char szBuffer2[128]; char szBuffer3[96][96];
+	char szBuffer[256]; char szBuffer2[256]; char szBuffer3[192][192];
 	int iDefIndex = 0;
 	
 	do {
@@ -985,12 +1040,12 @@ public void SyncItemData()
 		
 		int iItemType = bGloves ? ITEMTYPE_GLOVES : ITEMTYPE_WEAPON;
 		
-		KvGetSectionName(g_hItemsKv, iItemType == ITEMTYPE_WEAPON ? g_szWeaponInfo[g_iWeaponCount][DEFINDEX] : g_szGlovesInfo[g_iGlovesCount][DEFINDEX], 96);
+		KvGetSectionName(g_hItemsKv, iItemType == ITEMTYPE_WEAPON ? g_szWeaponInfo[g_iWeaponCount][DEFINDEX] : g_szGlovesInfo[g_iGlovesCount][DEFINDEX], 192);
 		strcopy(iItemType == ITEMTYPE_WEAPON ? g_szWeaponInfo[g_iWeaponCount][CLASSNAME] : g_szGlovesInfo[g_iGlovesCount][CLASSNAME], sizeof(szBuffer2), szBuffer2);
 		
-		char szItemName[96]; Prefaberator(iItemType, -1, -1, -1, -1.0, -1.0, szItemName);
+		char szItemName[192]; Prefaberator(iItemType, -1, -1, -1, -1.0, -1.0, szItemName);
 		
-		GetItemName(szItemName, iItemType == ITEMTYPE_WEAPON ? g_szWeaponInfo[g_iWeaponCount][DISPLAYNAME] : g_szGlovesInfo[g_iGlovesCount][DISPLAYNAME], 96);
+		GetItemName(szItemName, iItemType == ITEMTYPE_WEAPON ? g_szWeaponInfo[g_iWeaponCount][DISPLAYNAME] : g_szGlovesInfo[g_iGlovesCount][DISPLAYNAME], 192);
 		
 		if (bGloves) {
 			g_iGlovesCount++;
@@ -1007,7 +1062,8 @@ public void SyncItemData()
 	}
 	
 	do {
-		KvGetSectionName(g_hItemsKv, szBuffer, sizeof(szBuffer)); int iSkinDefIndex = StringToInt(szBuffer);
+		KvGetSectionName(g_hItemsKv, szBuffer, sizeof(szBuffer));
+		int iSkinDefIndex = StringToInt(szBuffer);
 		
 		if (iSkinDefIndex == 9001) {
 			strcopy(szBuffer, sizeof(szBuffer), "1");
@@ -1017,17 +1073,23 @@ public void SyncItemData()
 		strcopy(g_szPaintInfo[g_iPaintCount][DEFINDEX], sizeof(szBuffer), szBuffer);
 		
 		if (iSkinDefIndex == 0) {
-			strcopy(g_szPaintInfo[g_iPaintCount][DISPLAYNAME], 96, "Default");
+			strcopy(g_szPaintInfo[g_iPaintCount][DISPLAYNAME], 192, "Default");
 		} else if (iSkinDefIndex == 1) {
-			strcopy(g_szPaintInfo[g_iPaintCount][DISPLAYNAME], 96, "Vanilla");
+			strcopy(g_szPaintInfo[g_iPaintCount][DISPLAYNAME], 192, "Vanilla");
 		} else {
-			KvGetString(g_hItemsKv, "name", g_szPaintInfo[g_iPaintCount][ITEMNAME], 96);
+			KvGetString(g_hItemsKv, "name", g_szPaintInfo[g_iPaintCount][ITEMNAME], 192);
 			KvGetString(g_hItemsKv, "description_tag", szBuffer, sizeof(szBuffer));
+
+			if (
+				(StrContains(g_szPaintInfo[g_iPaintCount][ITEMNAME], "am_emerald_marbleized", false) != -1) ||
+				(StrContains(g_szPaintInfo[g_iPaintCount][ITEMNAME], "_lore", false) != -1)
+				)
+				LogMessage("[CSGO Items] Name: %s, Description Tag: %s", g_szPaintInfo[g_iPaintCount][ITEMNAME], szBuffer);
 			
-			GetItemName(szBuffer, g_szPaintInfo[g_iPaintCount][DISPLAYNAME], 96);
+			GetItemName(szBuffer, g_szPaintInfo[g_iPaintCount][DISPLAYNAME], 192);
 		}
 		
-		KvGetString(g_hItemsKv, "vmt_path", g_szPaintInfo[g_iPaintCount][VMTPATH], 96);
+		KvGetString(g_hItemsKv, "vmt_path", g_szPaintInfo[g_iPaintCount][VMTPATH], 192);
 		
 		g_bSkinNumGloveApplicable[g_iPaintCount] = StrContains(g_szPaintInfo[g_iPaintCount][VMTPATH], "paints_gloves", false) > -1;
 		
@@ -1103,9 +1165,9 @@ public void SyncItemData()
 			continue;
 		}
 		
-		strcopy(g_szMusicKitInfo[g_iMusicKitCount][DEFINDEX], 96, szBuffer);
+		strcopy(g_szMusicKitInfo[g_iMusicKitCount][DEFINDEX], 192, szBuffer);
 		KvGetString(g_hItemsKv, "loc_name", szBuffer2, sizeof(szBuffer2));
-		GetItemName(szBuffer2, g_szMusicKitInfo[g_iMusicKitCount][DISPLAYNAME], 96);
+		GetItemName(szBuffer2, g_szMusicKitInfo[g_iMusicKitCount][DISPLAYNAME], 192);
 		
 		g_iMusicKitCount++;
 	} while (KvGotoNextKey(g_hItemsKv)); KvRewind(g_hItemsKv);
@@ -1117,14 +1179,14 @@ public void SyncItemData()
 	}
 	
 	do {
-		KvGetString(g_hItemsKv, "name", g_szItemSetInfo[g_iItemSetCount][CLASSNAME], 96);
-		GetItemName(g_szItemSetInfo[g_iItemSetCount][CLASSNAME], g_szItemSetInfo[g_iItemSetCount][DISPLAYNAME], 96);
+		KvGetString(g_hItemsKv, "name", g_szItemSetInfo[g_iItemSetCount][CLASSNAME], 192);
+		GetItemName(g_szItemSetInfo[g_iItemSetCount][CLASSNAME], g_szItemSetInfo[g_iItemSetCount][DISPLAYNAME], 192);
 		
 		if (KvJumpToKey(g_hItemsKv, "items")) {
 			if (KvGotoFirstSubKey(g_hItemsKv, false)) {
 				do {
 					KvGetSectionName(g_hItemsKv, szBuffer, sizeof(szBuffer));
-					ExplodeString(szBuffer, "]", szBuffer3, 96, 96); ReplaceString(szBuffer3[0], 96, "[", ""); ReplaceString(szBuffer3[1], 96, "]", "");
+					ExplodeString(szBuffer, "]", szBuffer3, 192, 192); ReplaceString(szBuffer3[0], 192, "[", ""); ReplaceString(szBuffer3[1], 192, "]", "");
 					
 					CSGOItems_LoopSkins(iSkinNum) {
 						if (StrEqual(szBuffer3[0], g_szPaintInfo[iSkinNum][ITEMNAME])) {
@@ -1160,13 +1222,13 @@ public void SyncItemData()
 		KvGetString(g_hItemsKv, "item_name", szBuffer2, sizeof(szBuffer2));
 		
 		if (StrEqual(szBuffer2, "#StickerKit_comm01_rekt", false)) {
-			strcopy(g_szSprayInfo[g_iSprayCount][DISPLAYNAME], 96, "Rekt");
+			strcopy(g_szSprayInfo[g_iSprayCount][DISPLAYNAME], 192, "Rekt");
 		} else {
-			GetItemName(szBuffer2, g_szSprayInfo[g_iSprayCount][DISPLAYNAME], 96);
+			GetItemName(szBuffer2, g_szSprayInfo[g_iSprayCount][DISPLAYNAME], 192);
 		}
 		
 		KvGetSectionName(g_hItemsKv, szBuffer2, sizeof(szBuffer2));
-		strcopy(g_szSprayInfo[g_iSprayCount][DEFINDEX], 96, szBuffer2);
+		strcopy(g_szSprayInfo[g_iSprayCount][DEFINDEX], 192, szBuffer2);
 		
 		char szExplode[2][64]; ExplodeString(szBuffer, "/", szExplode, 2, 64);
 		
@@ -1184,7 +1246,7 @@ public void SyncItemData()
 	
 	do {
 		CSGOItems_LoopSkins(iSkinNum) {
-			KvGetString(g_hItemsKv, g_szPaintInfo[iSkinNum][ITEMNAME], g_szPaintInfo[iSkinNum][RARITY], 96);
+			KvGetString(g_hItemsKv, g_szPaintInfo[iSkinNum][ITEMNAME], g_szPaintInfo[iSkinNum][RARITY], 192);
 		}
 	} while (KvGotoNextKey(g_hItemsKv)); delete g_hItemsKv;
 	
@@ -1195,14 +1257,14 @@ public void SyncItemData()
 	g_bItemsSyncing = false;
 }
 
-stock void Prefaberator(int iItemType, int iClipAmmo, int iReserveAmmo, int iKillAward, float fSpread, float fCycleTime, char szItemName[96])
+stock void Prefaberator(int iItemType, int iClipAmmo, int iReserveAmmo, int iKillAward, float fSpread, float fCycleTime, char szItemName[192])
 {
-	char szPrefab[96]; KvGetString(g_hItemsKv, "prefab", szPrefab, sizeof(szPrefab));
+	char szPrefab[192]; KvGetString(g_hItemsKv, "prefab", szPrefab, sizeof(szPrefab));
 	
 	if (iItemType == ITEMTYPE_GLOVES && StrEqual(g_szGlovesInfo[g_iGlovesCount][TYPE], "", false)) {
-		strcopy(g_szGlovesInfo[g_iGlovesCount][TYPE], 96, szPrefab);
+		strcopy(g_szGlovesInfo[g_iGlovesCount][TYPE], 192, szPrefab);
 	} else if (iItemType == ITEMTYPE_WEAPON && StrEqual(g_szWeaponInfo[g_iWeaponCount][TYPE], "", false)) {
-		strcopy(g_szWeaponInfo[g_iWeaponCount][TYPE], 96, szPrefab);
+		strcopy(g_szWeaponInfo[g_iWeaponCount][TYPE], 192, szPrefab);
 	}
 	
 	if (StrEqual(szItemName, "", false)) {
@@ -1311,12 +1373,12 @@ stock void Prefaberator(int iItemType, int iClipAmmo, int iReserveAmmo, int iKil
 	
 	if (StrEqual(szPrefab, "", false)) {
 		if (iItemType == ITEMTYPE_WEAPON) {
-			IntToString(iClipAmmo, g_szWeaponInfo[g_iWeaponCount][CLIPAMMO], 96);
-			IntToString(iReserveAmmo, g_szWeaponInfo[g_iWeaponCount][RESERVEAMMO], 96);
-			IntToString(iKillAward, g_szWeaponInfo[g_iWeaponCount][KILLAWARD], 96);
+			IntToString(iClipAmmo, g_szWeaponInfo[g_iWeaponCount][CLIPAMMO], 192);
+			IntToString(iReserveAmmo, g_szWeaponInfo[g_iWeaponCount][RESERVEAMMO], 192);
+			IntToString(iKillAward, g_szWeaponInfo[g_iWeaponCount][KILLAWARD], 192);
 			
-			FloatToString(fSpread, g_szWeaponInfo[g_iWeaponCount][SPREAD], 96);
-			FloatToString(fCycleTime, g_szWeaponInfo[g_iWeaponCount][CYCLETIME], 96);
+			FloatToString(fSpread, g_szWeaponInfo[g_iWeaponCount][SPREAD], 192);
+			FloatToString(fCycleTime, g_szWeaponInfo[g_iWeaponCount][CYCLETIME], 192);
 		}
 		
 		KvJumpToKey(g_hItemsKv, "items");
