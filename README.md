@@ -1,6 +1,6 @@
 # DNG-ValveItems
 
-Under linux it could be necessary to convert the csgo_english.txt from utf16-le to utf-8, otherwise you'll see no name.
+Under ___linux___ it could be necessary to convert the csgo_english.txt from utf16-le to utf-8, otherwise you'll see no name.
 Example to convert the file: iconv -f utf-16le -t utf-8 csgo_english.txt > csgo_english_test.txt
 Usage with LGSM:
  - Open `~/lgsm/config-lgsm/csgoserver/csgoserver.cfg`
