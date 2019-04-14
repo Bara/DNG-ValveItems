@@ -147,14 +147,12 @@ void AddWeaponsToMenu(int client, Menu menu)
         char sEntry[WP_DISPLAY + 8];
         Format(sEntry, sizeof(sEntry), "[%d] %s", iWeapons2[wiDef], iWeapons2[wsName]);
         
-        int iPort = GetConVarInt(FindConVar("hostport"));
-        
         if (g_bDebug)
         {
             PrintToChat(client, "iWeapons2: %d [%s]", iWeapons2[wiDef], iWeapons2[wsDef]);
         }
         
-        if (iPort == 27015)
+        if (!g_bDebug)
         {
             menu.AddItem(iWeapons2[wsDef], iWeapons2[wsName]);
         }

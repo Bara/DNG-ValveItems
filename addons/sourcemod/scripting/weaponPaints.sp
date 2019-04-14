@@ -611,8 +611,6 @@ void AddWeaponSkinsToMenu(Menu menu, int client, int weapon = -1, bool activeWea
             char sEntry[WP_DISPLAY + 8];
             Format(sEntry, sizeof(sEntry), "[%d] %s", iSkins2[siDef], iSkins2[ssName]);
             
-            int iPort = GetConVarInt(FindConVar("hostport"));
-            
             if (StrEqual(iSkins2[ssName], "default", false))
             {
                 continue;
@@ -636,7 +634,7 @@ void AddWeaponSkinsToMenu(Menu menu, int client, int weapon = -1, bool activeWea
                     PrintToChat(client, "iSkins2: %d [%s] - isDef: %d", iSkins2[siDef], iSkins2[ssDef], isDef);
                 }
                 
-                if (iPort == 27015)
+                if (!g_bDebug)
                 {
                     menu.AddItem(iSkins2[ssDef], iSkins2[ssName]);
                 }
@@ -647,7 +645,7 @@ void AddWeaponSkinsToMenu(Menu menu, int client, int weapon = -1, bool activeWea
             }
             else
             {
-                if (iPort == 27015)
+                if (!g_bDebug)
                 {
                     menu.AddItem(iSkins2[ssDef], iSkins2[ssName], ITEMDRAW_DISABLED);
                 }
@@ -673,8 +671,6 @@ void AddWeaponSkinsToMenu(Menu menu, int client, int weapon = -1, bool activeWea
             char sEntry[WP_DISPLAY + 8];
             Format(sEntry, sizeof(sEntry), "[%d] %s", iSkins2[siDef], iSkins2[ssName]);
             
-            int iPort = GetConVarInt(FindConVar("hostport"));
-            
             if (g_bDebug)
             {
                 PrintToChat(client, "iSkins2: %d [%s]", iSkins2[siDef], iSkins2[ssDef]);
@@ -691,7 +687,7 @@ void AddWeaponSkinsToMenu(Menu menu, int client, int weapon = -1, bool activeWea
                 }
             }
             
-            if (iPort == 27015)
+            if (!g_bDebug)
             {
                 menu.AddItem(iSkins2[ssDef], iSkins2[ssName]);
             }
