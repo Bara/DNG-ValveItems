@@ -22,7 +22,7 @@
 #define CHANGE_INTERVAL 5
 #define KNIFE_LENGTH 128
 
-bool g_bDebug = true;
+bool g_bDebug = false;
 
 int g_iKnife[MAXPLAYERS + 1] =  { -1, ... };
 int g_iSite[MAXPLAYERS + 1] =  { 0, ... };
