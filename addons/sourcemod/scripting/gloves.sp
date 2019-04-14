@@ -105,7 +105,7 @@ public void OnMapStart()
 
 void connectSQL()
 {
-    SQL_TConnect(OnSQLConnect, "gloves");
+    SQL_TConnect(OnSQLConnect, "valve");
 }
 
 public void OnSQLConnect(Handle owner, Handle hndl, const char[] error, any data)

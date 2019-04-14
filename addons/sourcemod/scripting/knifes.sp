@@ -22,7 +22,7 @@
 #define CHANGE_INTERVAL 5
 #define KNIFE_LENGTH 128
 
-bool g_bDebug = false;
+bool g_bDebug = true;
 
 int g_iKnife[MAXPLAYERS + 1] =  { -1, ... };
 int g_iSite[MAXPLAYERS + 1] =  { 0, ... };
@@ -96,13 +96,13 @@ public void OnMapStart()
 
 void connectSQL()
 {
-    if (SQL_CheckConfig("knifes"))
+    if (SQL_CheckConfig("valve"))
     {
-        SQL_TConnect(OnSQLConnect, "knifes");
+        SQL_TConnect(OnSQLConnect, "valve");
     }
     else
     {
-        SetFailState("Can't find an entry in your databases.cfg with the name \"knifes\"");
+        SetFailState("Can't find an entry in your databases.cfg with the name \"valve\"");
         return;
     }
 }
@@ -371,6 +371,8 @@ void ShowKnifeMenu(int client)
             char sClassName[KNIFE_LENGTH], sDisplayName[KNIFE_LENGTH];
             CSGOItems_GetWeaponClassNameByDefIndex(defIndex, sClassName, sizeof(sClassName));
             CSGOItems_GetWeaponDisplayNameByDefIndex(defIndex, sDisplayName, sizeof(sDisplayName));
+
+            PrintToChat(client, "DefIndex: %d, className: %s, displayName: %s", defIndex, sClassName, sDisplayName);
             
             if(defIndex == 59 || defIndex == 42)
             {

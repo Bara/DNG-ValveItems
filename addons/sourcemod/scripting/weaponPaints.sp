@@ -406,13 +406,13 @@ bool CheckMenuAccess(int client)
 
 void connectSQL()
 {
-    if (SQL_CheckConfig("weaponPaints"))
+    if (SQL_CheckConfig("valve"))
     {
-        SQL_TConnect(OnSQLConnect, "weaponPaints");
+        SQL_TConnect(OnSQLConnect, "valve");
     }
     else
     {
-        SetFailState("Can't find an entry in your databases.cfg with the name \"weaponPaints\"");
+        SetFailState("Can't find an entry in your databases.cfg with the name \"valve\"");
         return;
     }
 }
