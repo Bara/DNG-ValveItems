@@ -127,7 +127,7 @@ void SetClientWear(int client, int iWeapon, int defIndex, float fWear)
     int iAmmo = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryReserveAmmoCount");
     
     char sNametag[128];
-    GetEntDataString(iWeapon, g_iCustomName, sNametag, sizeof(sNametag));
+    GetEntDataString(iWeapon, FindSendPropInfo("CBaseAttributableItem", "m_szCustomName"), sNametag, sizeof(sNametag));
     
     UpdateClientArray(client, sClass, iDef, fWear, iSeed, DEFAULT_QUALITY, sNametag);
     UpdateClientMySQL(client, sClass, iDef, fWear, iSeed, DEFAULT_QUALITY, sNametag);

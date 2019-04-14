@@ -53,7 +53,6 @@ int g_iLastChange[MAXPLAYERS + 1] =  { -1, ... };
 
 Database g_dDB = null;
 
-int g_iCustomName = -1;
 int g_iClip1 = -1;
 
 // int g_iWeaponPSite[MAXPLAYERS + 1] =  { 0, ... };
@@ -62,11 +61,6 @@ int g_iCache[paintsCache];
 ArrayList g_aCache = null;
 ArrayList g_aSkins = null;
 ArrayList g_aWeapons = null;
-
-Regex urlPattern;
-Regex ipPattern;
-RegexError theError;
-char g_sFile[PLATFORM_MAX_PATH + 1];
 
 Handle g_hAllSkins = null;
 bool g_bAllSkins[MAXPLAYERS + 1] = { false, ... };
@@ -133,28 +127,11 @@ public void OnPluginStart()
     LogMessage("[WeaponPaints] Connect SQL OnPluginStart");
     connectSQL();
     
-    g_iCustomName = FindSendPropInfo("CBaseCombatWeapon", "m_szCustomName");
-    if (g_iCustomName == -1)
-    {
-        SetFailState("Unable to find offset for m_szCustomName.");
-    }
-    
     g_iClip1 = FindSendPropInfo("CBaseCombatWeapon", "m_iClip1");
     if (g_iClip1 == -1)
     {
         SetFailState("Unable to find offset for m_iClip1.");
     }
-
-    char error[256];
-    urlPattern = CompileRegex("([-a-zA-Z0-9]*(([.])([a-zA-Z]){2,5}))", PCRE_CASELESS, error, sizeof(error), theError);
-    if (!StrEqual(error, ""))
-        LogError(error);
-    
-    ipPattern = CompileRegex("\\d+\\.\\d+\\.\\d+\\.\\d+(:\\d+)?", PCRE_CASELESS, error, sizeof(error), theError);
-    if (!StrEqual(error, ""))
-        LogError(error);
-    
-    BuildPath(Path_SM, g_sFile, sizeof(g_sFile), "logs/smartlinkremover.log");
 
     LoadTranslations("weaponpaints.phrases");
 }

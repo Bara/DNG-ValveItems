@@ -74,24 +74,6 @@ public Action Command_Nametag(int client, int args)
             
             return Plugin_Handled;
         }
-
-        char match[512];
-
-        MatchRegex(urlPattern, sName, theError);
-        if (GetRegexSubString(urlPattern, 0, match, sizeof(match)))
-        {
-            CReplyToCommand(client, "%T", "Detected URL", client, OUTBREAK);
-            LogToFile(g_sFile, "\"%L\" tried to use \"%s\" as nametag!", client, sName);
-            return Plugin_Handled;
-        }
-        
-        MatchRegex(ipPattern, sName, theError);
-        if (GetRegexSubString(ipPattern, 0, match, sizeof(match)))
-        {
-            CReplyToCommand(client, "%T", "Detected IP", client, OUTBREAK);
-            LogToFile(g_sFile, "\"%L\" tried to use \"%s\" as nametag!", client, sName);
-            return Plugin_Handled;
-        }
         
         if (g_bDebug)
         {
