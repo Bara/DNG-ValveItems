@@ -294,9 +294,6 @@ DEFINES
 #define     VTFPATH			20
 #define     QUALITY			21
 
-#define 	LANGURL         "https://bara.dev/api/csgo_english.txt"
-#define 	SCHEMAURL         "https://bara.dev/api/schema.txt"
-
 /****************************************************************************************************
 ETIQUETTE.
 *****************************************************************************************************/
@@ -436,39 +433,7 @@ public void SteamWorks_SteamServersConnected() {
 
 public Action SteamWorks_RestartRequested()
 {
-	Handle hRequest = SteamWorks_CreateHTTPRequest(k_EHTTPMethodGET, LANGURL);
-	
-	SteamWorks_SetHTTPRequestHeaderValue(hRequest, "Pragma", "no-cache");
-	SteamWorks_SetHTTPRequestHeaderValue(hRequest, "Cache-Control", "no-cache");
-	SteamWorks_SetHTTPRequestGetOrPostParameter(hRequest, "update", "true");
-	SteamWorks_SetHTTPRequestNetworkActivityTimeout(hRequest, 60);
-	SteamWorks_SetHTTPCallbacks(hRequest, CallBack_LangUpdated);
-	
-	if (hRequest != null) {
-		SteamWorks_SendHTTPRequest(hRequest);
-	}
-	
-	hRequest = SteamWorks_CreateHTTPRequest(k_EHTTPMethodGET, SCHEMAURL);
-	
-	SteamWorks_SetHTTPRequestHeaderValue(hRequest, "Pragma", "no-cache");
-	SteamWorks_SetHTTPRequestHeaderValue(hRequest, "Cache-Control", "no-cache");
-	SteamWorks_SetHTTPRequestGetOrPostParameter(hRequest, "update", "true");
-	SteamWorks_SetHTTPRequestNetworkActivityTimeout(hRequest, 60);
-	SteamWorks_SetHTTPCallbacks(hRequest, CallBack_SchemaUpdated);
-	
-	if (hRequest != null) {
-		SteamWorks_SendHTTPRequest(hRequest);
-	}
-	
-	delete hRequest;
-}
-
-public int CallBack_LangUpdated(Handle hRequest, bool bFailure, bool bRequestSuccessful, EHTTPStatusCode eStatusCode, any anything) {
-	delete hRequest;
-}
-
-public int CallBack_SchemaUpdated(Handle hRequest, bool bFailure, bool bRequestSuccessful, EHTTPStatusCode eStatusCode, any anything) {
-	delete hRequest;
+	RetrieveLanguage();
 }
 
 public void OnAllPluginsLoaded() {
@@ -804,21 +769,7 @@ public bool RetrieveLanguage()
 		return true;
 	}
 	
-	Handle hRequest = SteamWorks_CreateHTTPRequest(k_EHTTPMethodGET, LANGURL);
-	
-	SteamWorks_SetHTTPRequestHeaderValue(hRequest, "Pragma", "no-cache");
-	SteamWorks_SetHTTPRequestHeaderValue(hRequest, "Cache-Control", "no-cache");
-	SteamWorks_SetHTTPCallbacks(hRequest, Language_Retrieved);
-	
-	if (SteamWorks_SendHTTPRequest(hRequest) && hRequest != null) {
-		g_bLanguageDownloading = true;
-		g_iLanguageDownloadAttempts++;
-		return true;
-	} else {
-		CreateTimer(2.0, Timer_SyncLanguage);
-		LogMessage("[WARNING] SteamWorks language retrieval failed, attempting to use old file (If one is available)");
-		delete hRequest;
-	}
+	CreateTimer(0.2, Timer_SyncLanguage);
 	
 	return false;
 }
@@ -840,18 +791,6 @@ public Action Timer_Wait1(Handle hTimer)
 	RetrieveLanguage();
 	
 	return Plugin_Stop;
-}
-
-public int Language_Retrieved(Handle hRequest, bool bFailure, bool bRequestSuccessful, EHTTPStatusCode eStatusCode, any anything)
-{
-	if (bRequestSuccessful && eStatusCode == k_EHTTPStatusCode200OK) {
-		SteamWorks_WriteHTTPResponseBodyToFile(hRequest, "resource/csgo_english_utf8.txt");
-	}
-	
-	LogMessage("UTF-8 language file successfully retrieved.");
-	
-	CreateTimer(1.0, Timer_SyncLanguage, -1, TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT);
-	delete hRequest;
 }
 
 public Action Timer_SyncLanguage(Handle hTimer)
@@ -877,7 +816,7 @@ public Action Timer_SyncLanguage(Handle hTimer)
 		} else {
 			Call_StartForward(g_hOnPluginEnd);
 			Call_Finish();
-			SetFailState("UTF-8 language file is corrupted, failed after %d attempts. \nCheck: %s", g_iLanguageDownloadAttempts, LANGURL);
+			SetFailState("UTF-8 language file is corrupted, failed after %d attempts.", g_iLanguageDownloadAttempts);
 		}
 	}
 	
@@ -907,21 +846,7 @@ public bool RetrieveItemSchema()
 		return true;
 	}
 	
-	Handle hRequest = SteamWorks_CreateHTTPRequest(k_EHTTPMethodGET, SCHEMAURL);
-	
-	SteamWorks_SetHTTPRequestHeaderValue(hRequest, "Pragma", "no-cache");
-	SteamWorks_SetHTTPRequestHeaderValue(hRequest, "Cache-Control", "no-cache");
-	SteamWorks_SetHTTPCallbacks(hRequest, Schema_Retrieved);
-	
-	if (SteamWorks_SendHTTPRequest(hRequest) && hRequest != null) {
-		g_bSchemaDownloading = true;
-		g_iSchemaDownloadAttempts++;
-		return true;
-	} else {
-		CreateTimer(2.0, Timer_SyncSchema);
-		LogMessage("[WARNING] SteamWorks schema retrieval failed, attempting to use old file (If one is available)");
-		delete hRequest;
-	}
+	CreateTimer(0.2, Timer_SyncSchema);
 	
 	return false;
 }
@@ -945,18 +870,6 @@ public Action Timer_Wait2(Handle hTimer)
 	return Plugin_Stop;
 }
 
-public int Schema_Retrieved(Handle hRequest, bool bFailure, bool bRequestSuccessful, EHTTPStatusCode eStatusCode, any anything)
-{
-	if (bRequestSuccessful && eStatusCode == k_EHTTPStatusCode200OK) {
-		SteamWorks_WriteHTTPResponseBodyToFile(hRequest, "scripts/items/items_game_fixed.txt");
-	}
-	
-	LogMessage("Item Schema successfully retrieved.");
-	
-	CreateTimer(1.0, Timer_SyncSchema, -1, TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT);
-	delete hRequest;
-}
-
 public Action Timer_SyncSchema(Handle hTimer)
 {
 	if (g_bRoundEnd) {
@@ -972,7 +885,7 @@ public Action Timer_SyncSchema(Handle hTimer)
 		
 		delete hSchemaFile;
 		
-		DeleteFile("scripts/items/items_game_fixed.txt");
+		DeleteFile("scripts/items/items_game.txt");
 		
 		if (g_iSchemaDownloadAttempts < 10) {
 			RetrieveItemSchema();
@@ -980,7 +893,7 @@ public Action Timer_SyncSchema(Handle hTimer)
 		} else {
 			Call_StartForward(g_hOnPluginEnd);
 			Call_Finish();
-			SetFailState("Item schema is corrupted, failed after %d attempts. \nCheck: %s", g_iSchemaDownloadAttempts, SCHEMAURL);
+			SetFailState("Item schema is corrupted, failed after %d attempts.", g_iSchemaDownloadAttempts);
 		}
 	}
 	
