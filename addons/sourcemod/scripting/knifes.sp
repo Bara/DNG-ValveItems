@@ -372,7 +372,10 @@ void ShowKnifeMenu(int client)
             CSGOItems_GetWeaponClassNameByDefIndex(defIndex, sClassName, sizeof(sClassName));
             CSGOItems_GetWeaponDisplayNameByDefIndex(defIndex, sDisplayName, sizeof(sDisplayName));
 
-            PrintToChat(client, "DefIndex: %d, className: %s, displayName: %s", defIndex, sClassName, sDisplayName);
+            if (g_bDebug)
+            {
+                PrintToChat(client, "DefIndex: %d, className: %s, displayName: %s", defIndex, sClassName, sDisplayName);
+            }
             
             if(defIndex == 59 || defIndex == 42)
             {
