@@ -1079,12 +1079,6 @@ public void SyncItemData()
 		} else {
 			KvGetString(g_hItemsKv, "name", g_szPaintInfo[g_iPaintCount][ITEMNAME], 192);
 			KvGetString(g_hItemsKv, "description_tag", szBuffer, sizeof(szBuffer));
-
-			if (
-				(StrContains(g_szPaintInfo[g_iPaintCount][ITEMNAME], "am_emerald_marbleized", false) != -1) ||
-				(StrContains(g_szPaintInfo[g_iPaintCount][ITEMNAME], "_lore", false) != -1)
-				)
-				LogMessage("[CSGO Items] Name: %s, Description Tag: %s", g_szPaintInfo[g_iPaintCount][ITEMNAME], szBuffer);
 			
 			GetItemName(szBuffer, g_szPaintInfo[g_iPaintCount][DISPLAYNAME], 192);
 		}
