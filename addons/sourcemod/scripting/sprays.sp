@@ -16,7 +16,7 @@
 #pragma newdecls required
 
 #define LoopClients(%1) for(int %1 = 1; %1 <= MaxClients; %1++) if(IsClientValid(%1))
-#define PTAG "{darkblue}[Outbreak]{default}"
+#define PTAG "{darkblue}[DNG]{default}"
 
 #define CATSIZE 32
 #define SOUND_SPRAY "music/player/sprayer.mp3"
