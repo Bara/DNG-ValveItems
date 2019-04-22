@@ -1,0 +1,15 @@
+"Phrases"
+{
+    "In Group: Yes"
+    {
+        "en"        "{default}You are already our steam group!"
+        "de"        "{default}Sie sind bereits in unserer Steam Gruppe!"
+    }
+
+    "In Group: No"
+    {
+        "#format"   "{1:s}"
+        "en"        "{default}You aren't in our steam group! Go on {green}{1} {default}and join our steam group."
+        "de"        "{default}Du bist nicht in unserer Steam Gruppe! Gib {green}{1} {default}ein und tritt unserer Steam Gruppe bei."
+    }
+}
