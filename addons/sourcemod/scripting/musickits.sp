@@ -6,6 +6,7 @@
 #include <csgoitems>
 #include <clientprefs>
 #include <multicolors>
+#include <groupstatus>
 
 #pragma newdecls required
 
@@ -57,6 +58,8 @@ public void OnPluginStart()
 			OnClientCookiesCached(i);
 		}
 	}
+
+	LoadTranslations("groupstatus.phrases");
 }
 
 public void CSGOItems_OnItemsSynced()
@@ -203,6 +206,22 @@ public Action Command_RKit(int client, int args)
 		return Plugin_Handled;
 	}
 
+	if (!GroupStatus_IsClientInGroup(client))
+	{
+		ConVar cvar = FindConVar("groupstatus_url");
+
+		if (cvar != null)
+		{
+			char sURL[256], sName[64];
+			cvar.GetString(sName, sizeof(sName));
+			Format(sURL, sizeof(sURL), "https://steamcommunity.com/groups/%s", sName);
+
+			CPrintToChat(client, "%T", "In Group: No", client, sName);
+		}
+
+		return Plugin_Handled;
+	}
+
 	if (g_bRandom[client])
 	{
 		g_bRandom[client] = false;
@@ -225,6 +244,22 @@ public Action Command_Music(int client, int args)
 {
 	if(!IsClientValid(client))
 	{
+		return Plugin_Handled;
+	}
+
+	if (!GroupStatus_IsClientInGroup(client))
+	{
+		ConVar cvar = FindConVar("groupstatus_url");
+
+		if (cvar != null)
+		{
+			char sURL[256], sName[64];
+			cvar.GetString(sName, sizeof(sName));
+			Format(sURL, sizeof(sURL), "https://steamcommunity.com/groups/%s", sName);
+
+			CPrintToChat(client, "%T", "In Group: No", client, sName);
+		}
+
 		return Plugin_Handled;
 	}
 	
@@ -335,13 +370,13 @@ void ShowMusicKitsMenu(int client)
 
 stock bool IsClientValid(int client, bool bots = false)
 {
-    if (client > 0 && client <= MaxClients)
-    {
-        if(IsClientInGame(client) && (bots || !IsFakeClient(client)) && !IsClientSourceTV(client))
-        {
-            return true;
-        }
-    }
-    
-    return false;
+	if (client > 0 && client <= MaxClients)
+	{
+		if(IsClientInGame(client) && (bots || !IsFakeClient(client)) && !IsClientSourceTV(client))
+		{
+			return true;
+		}
+	}
+	
+	return false;
 }

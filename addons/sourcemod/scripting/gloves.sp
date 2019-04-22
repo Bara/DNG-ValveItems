@@ -6,6 +6,7 @@
 #include <clientprefs>
 #include <multicolors>
 #include <autoexecconfig>
+#include <groupstatus>
 
 #pragma newdecls required
 
@@ -96,6 +97,7 @@ public void OnPluginStart()
     connectSQL();
 
     LoadTranslations("gloves.phrases");
+    LoadTranslations("groupstatus.phrases");
 }
 
 public void OnMapStart()
@@ -258,6 +260,22 @@ public Action Command_Gloves(int client, int args)
 {
     if(!IsClientValid(client))
     {
+        return Plugin_Handled;
+    }
+
+    if (!GroupStatus_IsClientInGroup(client))
+    {
+        ConVar cvar = FindConVar("groupstatus_url");
+
+        if (cvar != null)
+        {
+            char sURL[256], sName[64];
+            cvar.GetString(sName, sizeof(sName));
+            Format(sURL, sizeof(sURL), "https://steamcommunity.com/groups/%s", sName);
+
+            CPrintToChat(client, "%T", "In Group: No", client, sName);
+        }
+
         return Plugin_Handled;
     }
 

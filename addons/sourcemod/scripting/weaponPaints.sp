@@ -8,6 +8,7 @@
 #include <multicolors>
 #include <autoexecconfig>
 #include <knifes>
+#include <groupstatus>
 
 #pragma newdecls required
 
@@ -134,6 +135,7 @@ public void OnPluginStart()
     }
 
     LoadTranslations("weaponpaints.phrases");
+    LoadTranslations("groupstatus.phrases");
 }
 
 public void OnClientPutInServer(int client)
@@ -216,6 +218,22 @@ public Action Command_AllSkins(int client, int args)
         return Plugin_Handled;
     }
 
+    if (!GroupStatus_IsClientInGroup(client))
+    {
+        ConVar cvar = FindConVar("groupstatus_url");
+
+        if (cvar != null)
+        {
+            char sURL[256], sName[64];
+            cvar.GetString(sName, sizeof(sName));
+            Format(sURL, sizeof(sURL), "https://steamcommunity.com/groups/%s", sName);
+
+            CPrintToChat(client, "%T", "In Group: No", client, sName);
+        }
+
+        return Plugin_Handled;
+    }
+
     if (g_bAllSkins[client])
     {
         CReplyToCommand(client, "%T", "All skins on", client, OUTBREAK);
@@ -232,6 +250,22 @@ public Action Command_WS(int client, int args)
 {
     if(!IsClientValid(client))
     {
+        return Plugin_Handled;
+    }
+
+    if (!GroupStatus_IsClientInGroup(client))
+    {
+        ConVar cvar = FindConVar("groupstatus_url");
+
+        if (cvar != null)
+        {
+            char sURL[256], sName[64];
+            cvar.GetString(sName, sizeof(sName));
+            Format(sURL, sizeof(sURL), "https://steamcommunity.com/groups/%s", sName);
+
+            CPrintToChat(client, "%T", "In Group: No", client, sName);
+        }
+
         return Plugin_Handled;
     }
 

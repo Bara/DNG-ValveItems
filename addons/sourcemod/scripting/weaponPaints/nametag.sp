@@ -33,6 +33,22 @@ public Action Command_Nametag(int client, int args)
     {
         return Plugin_Handled;
     }
+
+    if (!GroupStatus_IsClientInGroup(client))
+    {
+        ConVar cvar = FindConVar("groupstatus_url");
+
+        if (cvar != null)
+        {
+            char sURL[256], sName[64];
+            cvar.GetString(sName, sizeof(sName));
+            Format(sURL, sizeof(sURL), "https://steamcommunity.com/groups/%s", sName);
+
+            CPrintToChat(client, "%T", "In Group: No", client, sName);
+        }
+
+        return Plugin_Handled;
+    }
     
     if(!IsPlayerAlive(client))
     {
