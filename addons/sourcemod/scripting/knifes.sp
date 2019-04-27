@@ -152,6 +152,11 @@ public Action OnPlayerRunCmd(int client, int& buttons, int& impulse, float vel[3
         return Plugin_Continue;
     }
 
+    if (!IsValidEntity(weapon))
+    {
+        return Plugin_Continue;
+    }
+
     if (IsClientValid(client) && IsPlayerAlive(client))
     {
         if(buttons & IN_ATTACK2)
