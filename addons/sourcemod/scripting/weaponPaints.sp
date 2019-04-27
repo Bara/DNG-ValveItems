@@ -46,7 +46,7 @@ enum paintsCache
     String:pC_sNametag[128]
 };
 
-bool g_bDebug = true;
+bool g_bDebug = false;
 bool g_bChangeC4 = false;
 bool g_bChangeGrenade = false;
 
