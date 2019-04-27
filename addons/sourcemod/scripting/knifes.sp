@@ -32,6 +32,7 @@ int g_iLastChange[MAXPLAYERS + 1] =  { -1, ... };
 ConVar g_cMessage = null;
 ConVar g_cShowDisableKnifes = null;
 ConVar g_cFlag = null;
+ConVar g_cIgnoreIDs = null;
 
 Database g_dDB = null;
 
@@ -78,6 +79,7 @@ public void OnPluginStart()
     g_cMessage = AutoExecConfig_CreateConVar("knifes_show_message", "1", "Show message on knife selection", _, true, 0.0, true, 1.0);
     g_cShowDisableKnifes = AutoExecConfig_CreateConVar("knifes_show_disabled_knife", "1", "Show disabled knifes (for user without flag)", _, true, 0.0, true, 1.0);
     g_cFlag = AutoExecConfig_CreateConVar("knifes_flag", "t", "Flag to get access");
+    g_cIgnoreIDs = AutoExecConfig_CreateConVar("knifes_ignore_ids", "41;74;80;", "Seperate each ID with \";\"");
     AutoExecConfig_ExecuteFile();
     AutoExecConfig_CleanFile();
     
@@ -395,8 +397,18 @@ void ShowKnifeMenu(int client)
         menu.SetTitle("%T", "Choose a Knife Currently", client, "Default");
         menu.AddItem("0", "Default", ITEMDRAW_DISABLED);
     }
+
+    int iCount = CSGOItems_GetWeaponCount();
+
+    char sList[128];
+    g_cIgnoreIDs.GetString(sList, sizeof(sList));
+
+    PrintToChat(client, "sList: %s", sList);
+
+    char[][] sIgnoreIDs = new char[iCount][12];
+    int iIDs = ExplodeString(sList, ";", sIgnoreIDs, iCount, 12);
         
-    for (int i = 0; i <= CSGOItems_GetWeaponCount(); i++)
+    for (int i = 0; i <= iCount; i++)
     {
         int defIndex = CSGOItems_GetWeaponDefIndexByWeaponNum(i);
         
@@ -415,6 +427,26 @@ void ShowKnifeMenu(int client)
             {
                 Format(sDisplayName, sizeof(sDisplayName), "%T", "T Knife", client, sDisplayName);
                 continue;
+            }
+
+            bool bContinue = false;
+            for(int j = 0; j < iIDs; j++)
+            {
+                if (StringToInt(sIgnoreIDs[j]) == defIndex)
+                {
+                    bContinue = true;
+                    break;
+                }
+            }
+
+            if (bContinue)
+            {
+                continue;
+            }
+
+            if (g_bDebug)
+            {
+                Format(sDisplayName, sizeof(sDisplayName), "[%d] %s", defIndex, sDisplayName);
             }
             
             if (g_iKnife[client] != defIndex)
