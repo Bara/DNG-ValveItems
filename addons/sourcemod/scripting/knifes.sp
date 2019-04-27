@@ -142,10 +142,6 @@ public void OnWeaponSwitchPost(int client, int weapon)
         {
             SetEntPropFloat(weapon, Prop_Send, "m_flNextSecondaryAttack", GetGameTime() + 99999999.9);
         }
-        else
-        {
-            SetEntPropFloat(weapon, Prop_Send, "m_flNextSecondaryAttack", GetGameTime() - 0.1);
-        }
     }
 }
 
