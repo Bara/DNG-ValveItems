@@ -33,6 +33,7 @@ ConVar g_cMessage = null;
 ConVar g_cShowDisableKnifes = null;
 ConVar g_cFlag = null;
 ConVar g_cIgnoreIDs = null;
+ConVar g_cAllowThrow = null;
 
 Database g_dDB = null;
 
@@ -80,6 +81,7 @@ public void OnPluginStart()
     g_cShowDisableKnifes = AutoExecConfig_CreateConVar("knifes_show_disabled_knife", "1", "Show disabled knifes (for user without flag)", _, true, 0.0, true, 1.0);
     g_cFlag = AutoExecConfig_CreateConVar("knifes_flag", "t", "Flag to get access");
     g_cIgnoreIDs = AutoExecConfig_CreateConVar("knifes_ignore_ids", "41;74;80;", "Seperate each ID with \";\"");
+    g_cAllowThrow = AutoExecConfig_CreateConVar("knifes_allow_throw", "0", "Allow throw of axe, spanner and wrench?", _, true, 0.0, true, 1.0);
     AutoExecConfig_ExecuteFile();
     AutoExecConfig_CleanFile();
     
@@ -114,6 +116,7 @@ void connectSQL()
 public void OnClientPutInServer(int client)
 {
     SDKHook(client, SDKHook_WeaponEquipPost, OnWeaponEquipPost);
+    SDKHook(client, SDKHook_WeaponSwitchPost, OnWeaponSwitchPost);
 }
 
 public void OnClientPostAdminCheck(int client)
@@ -122,6 +125,53 @@ public void OnClientPostAdminCheck(int client)
     {
         LoadClientKnifes(client);
     }
+}
+
+public void OnWeaponSwitchPost(int client, int weapon)
+{
+    if (g_cAllowThrow.BoolValue)
+    {
+        return;
+    }
+
+    if (IsClientValid(client) && IsPlayerAlive(client))
+    {
+        int iDef = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
+        
+        if (CSGOItems_IsDefIndexKnife(iDef) && (iDef == 75 || iDef == 76 || iDef == 78))
+        {
+            SetEntPropFloat(weapon, Prop_Send, "m_flNextSecondaryAttack", GetGameTime() + 99999999.9);
+        }
+        else
+        {
+            SetEntPropFloat(weapon, Prop_Send, "m_flNextSecondaryAttack", GetGameTime() - 0.1);
+        }
+    }
+}
+
+public Action OnPlayerRunCmd(int client, int& buttons, int& impulse, float vel[3], float angles[3], int& weapon, int& subtype, int& cmdnum, int& tickcount, int& seed, int mouse[2])
+{
+    if (g_cAllowThrow.BoolValue)
+    {
+        return Plugin_Continue;
+    }
+
+    if (IsClientValid(client) && IsPlayerAlive(client))
+    {
+        if(buttons & IN_ATTACK2)
+        {
+            int iDef = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
+            
+            if (CSGOItems_IsDefIndexKnife(iDef) && (iDef == 75 || iDef == 76 || iDef == 78))
+            {
+                SetEntPropFloat(weapon, Prop_Send, "m_flNextSecondaryAttack", GetGameTime() + 99999999.9);
+                buttons &= ~IN_ATTACK2;
+                return Plugin_Changed;
+            }
+        }
+    }
+
+    return Plugin_Continue;
 }
 
 public void OnWeaponEquipPost(int client, int weapon)
