@@ -46,7 +46,7 @@ enum paintsCache
     String:pC_sNametag[128]
 };
 
-bool g_bDebug = false;
+bool g_bDebug = true;
 bool g_bChangeC4 = false;
 bool g_bChangeGrenade = false;
 
@@ -62,6 +62,7 @@ int g_iCache[paintsCache];
 ArrayList g_aCache = null;
 ArrayList g_aSkins = null;
 ArrayList g_aWeapons = null;
+StringMap g_sExtraNames = null;
 
 Handle g_hAllSkins = null;
 bool g_bAllSkins[MAXPLAYERS + 1] = { false, ... };
@@ -209,6 +210,7 @@ public void OnMapStart()
 {
     LogMessage("[WeaponPaints] Connect SQL OnMapStart");
     connectSQL();
+    LoadExtraNames();
 }
 
 public Action Command_AllSkins(int client, int args)
@@ -428,6 +430,46 @@ void connectSQL()
     }
 }
 
+void LoadExtraNames()
+{
+    char sFile[PREFIX_MAX_LENGTH + 1];
+    BuildPath(Path_SM, sFile, sizeof(sFile), "configs/skin_extra_names.cfg");
+
+    KeyValues kvNames = new KeyValues("Skin-Extra-Names");
+
+    if (!kvNames.ImportFromFile(sFile))
+    {
+        LogError("[Weapon Paints] (AddWeaponSkinsToMenu) Can't read \"%s\"! (ImportFromFile)", sFile);
+        delete kvNames;
+        return;
+    }
+
+    delete g_sExtraNames;
+    g_sExtraNames = new StringMap();
+
+    if (kvNames.GotoFirstSubKey(false))
+    {
+        do
+        {
+            char sID[12];
+            char sName[WP_DISPLAY];
+
+            kvNames.GetSectionName(sID, sizeof(sID));
+            kvNames.GetString(NULL_STRING, sName, sizeof(sName));
+
+            g_sExtraNames.SetString(sID, sName);
+
+            if (g_bDebug)
+            {
+                LogMessage("[WeaponPaints] (AddWeaponSkinsToMenu) sID: %s, Name: %s", sID, sName);
+            }
+        }
+        while (kvNames.GotoNextKey(false));
+    }
+
+    delete kvNames;
+}
+
 void UpdateClientMySQL(int client, const char[] sClass, int defIndex, float fWear, int iSeed, int iQuality, char[] sNametag = "")
 {
     if (g_aCache != null)
@@ -594,6 +636,12 @@ void AddWeaponSkinsToMenu(Menu menu, int client, int weapon = -1, bool activeWea
         if (defIndex < 1 || CSGOItems_IsSkinNumGloveApplicable(i))
         {
             continue;
+        }
+
+        char sBuffer[32];
+        if (g_sExtraNames.GetString(sDefIndex, sBuffer, sizeof(sBuffer)))
+        {
+            Format(sDisplay, sizeof(sDisplay), "%s %s", sDisplay, sBuffer);
         }
         
         int skins[skinsList];
