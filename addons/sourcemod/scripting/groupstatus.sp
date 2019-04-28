@@ -5,7 +5,6 @@
 #include <SteamWorks>
 #include <multicolors>
 #include <autoexecconfig>
-#include <dng-jail>
 
 #pragma newdecls required
 
@@ -49,7 +48,7 @@ public void OnPluginStart()
     AutoExecConfig_ExecuteFile();
     AutoExecConfig_CleanFile();
 
-    CSetPrefix("{darkblue}[%s]{default}", DNG_BASE);
+    CSetPrefix("{darkblue}[DNG]{default}");
 
     CreateTimer(30.0, Timer_CheckStatus, _, TIMER_FLAG_NO_MAPCHANGE | TIMER_REPEAT);
 }
@@ -131,17 +130,18 @@ public void SteamWorks_OnClientGroupStatus(int authid, int groupid, bool isMembe
     }
 }
 
-int GetUserAuthID(int authid)
+int GetUserAuthID(int iAuthID)
 {
     for (int i = 1; i <= MaxClients; i++)
     {
         if (IsClientValid(i))
         {
-            char[] charauth = new char[64];
-            char[] authchar = new char[64];
-            GetClientAuthId(i, AuthId_Steam3, charauth, 64);
-            IntToString(authid, authchar, 64);
-            if (StrContains(charauth, authchar) != -1)
+            int size = 64;
+            char[] sAuthID = new char[size];
+            char[] sAuthChar = new char[size];
+            GetClientAuthId(i, AuthId_Steam3, sAuthID, size);
+            IntToString(iAuthID, sAuthChar, size);
+            if (StrContains(sAuthID, sAuthChar) != -1)
             {
                 return i;
             }
@@ -149,4 +149,17 @@ int GetUserAuthID(int authid)
     }
 
     return -1;
+}
+
+stock bool IsClientValid(int client, bool bots = false)
+{
+    if (client > 0 && client <= MaxClients)
+    {
+        if(IsClientInGame(client) && (bots || !IsFakeClient(client)) && !IsClientSourceTV(client))
+        {
+            return true;
+        }
+    }
+    
+    return false;
 }
