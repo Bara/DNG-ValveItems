@@ -63,26 +63,26 @@
 
 	"Menu All skins on"
 	{
-		"en"			"All skins"
-		"de"			"Alle Skins"
+		"en"			"[X] Show all skins"
+		"de"			"[X] Alle Skins anzeigen"
 	}
 
 	"All skins on"
 	{
 		"en"			"All skins will be shown"
-		"de"			"Alle Skins werden nun angezeigt"
+		"de"			"Es werden jetzt alle Skins angezeigt"
 	}
 
 	"All skins off"
 	{
 		"en"			"Only appropriate skins will be shown"
-		"de"			"Nur passende Skins werden angezeigt"
+		"de"			"Es werden nur noch passende Skins angezeigt"
 	}
 
 	"Menu All skins off"
 	{
-		"en"			"Only appropriate skins"
-		"de"			"Nur passende Skins"
+		"en"			"[ ] Show all skins"
+		"de"			"[ ] Alle Skins anzeigen"
 	}
 
 	"Menu Change nametag"
