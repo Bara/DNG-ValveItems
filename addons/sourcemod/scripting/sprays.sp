@@ -625,7 +625,7 @@ public int Native_ResetClientTime(Handle plugin, int numParams)
 void GetSprays(KeyValues kv, int level = 0, const char[] category = "", const char[] name = "")
 {
     char sSection[32];
-    char sValue[32];
+    char sValue[SPRAY_PATH_LENGTH];
     ArrayList array = new ArrayList(SPRAY_PATH_LENGTH);
 
     if (g_bDebug) LogToFile(g_sLog, "- Section start (level %d) -", level);
@@ -690,7 +690,7 @@ void GetSprays(KeyValues kv, int level = 0, const char[] category = "", const ch
 
 
         // sSplit[0] - count, sSplit[1] - keyword, sSplit[2] - value
-        char sSplit[2][2][SPRAY_PATH_LENGTH];
+        char sSplit[12][12][SPRAY_PATH_LENGTH];
 
         for (int i = 0; i < array.Length; i++)
         {
@@ -708,7 +708,7 @@ void GetSprays(KeyValues kv, int level = 0, const char[] category = "", const ch
     delete array;
 }
 
-void AddSpray(const char[] name, const char[] category, const char[][][] values)
+void AddSpray(const char[] name, const char[] category, const char values[12][12][SPRAY_PATH_LENGTH])
 {
     bool bFound = false;
     for (int j = 1; j < g_iCount; j++)
