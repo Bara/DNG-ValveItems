@@ -21,6 +21,7 @@
 #define CATSIZE 32
 #define SOUND_SPRAY "music/player/sprayer.mp3"
 #define MAX_SPRAYS 1024
+#define SPRAY_PATH_LENGTH PLATFORM_MAX_PATH * 2
 
 enum sprayList
 {
@@ -50,9 +51,9 @@ ConVar g_cEnableCustom = null;
 Handle g_hCookie = null;
 Handle g_hOnSpray = null;
 
-char g_sFile[PLATFORM_MAX_PATH + 1];
-char g_sFileAdd[PLATFORM_MAX_PATH + 1];
-char g_sLog[PLATFORM_MAX_PATH + 1];
+char g_sFile[SPRAY_PATH_LENGTH];
+char g_sFileAdd[SPRAY_PATH_LENGTH];
+char g_sLog[SPRAY_PATH_LENGTH];
 
 ArrayList g_aCategories = null;
 
@@ -135,10 +136,10 @@ void AddValveSprays()
         char sDisplay[64];
         CSGOItems_GetSprayDisplayNameBySprayNum(i, sDisplay, sizeof(sDisplay));
         
-        char sVMT[PLATFORM_MAX_PATH + 1];
+        char sVMT[SPRAY_PATH_LENGTH];
         CSGOItems_GetSprayVMTBySprayNum(i, sVMT, sizeof(sVMT));
         
-        char sVTF[PLATFORM_MAX_PATH + 1];
+        char sVTF[SPRAY_PATH_LENGTH];
         CSGOItems_GetSprayVTFBySprayNum(i, sVTF, sizeof(sVTF));
         
         if (strlen(sVMT) > 4)
@@ -158,7 +159,7 @@ void AddValveSprays()
                 continue;
             }
             
-            char sPrecache[PLATFORM_MAX_PATH + 1];
+            char sPrecache[SPRAY_PATH_LENGTH];
             strcopy(sPrecache, sizeof(sPrecache), sVMT);
             ReplaceString(sPrecache, sizeof(sPrecache), "materials/", "");
             ReplaceString(sPrecache, sizeof(sPrecache), ".vmt", "");
@@ -216,7 +217,7 @@ void PrepareSpraysConfig()
         return;
     }
 
-    char sFile[PLATFORM_MAX_PATH + 1];
+    char sFile[SPRAY_PATH_LENGTH];
     BuildPath(Path_SM, sFile, sizeof(sFile), "configs/sprays.cfg");
     
     if (!FileExists(sFile))
@@ -471,7 +472,7 @@ stock bool GetPlayerEyeViewPoint(int client, float fPosition[3])
 
 public bool TraceEntityFilterPlayer(int iEntity, int iContentsMask)
 {
-    return iEntity > GetMaxClients();
+    return iEntity > MaxClients;
 }
 
 void TE_SetupBSPDecal(const float fOrigin[3], int iIndex)
@@ -625,7 +626,7 @@ void GetSprays(KeyValues kv, int level = 0, const char[] category = "", const ch
 {
     char sSection[32];
     char sValue[32];
-    ArrayList array = new ArrayList(PLATFORM_MAX_PATH + 1);
+    ArrayList array = new ArrayList(SPRAY_PATH_LENGTH);
 
     if (g_bDebug) LogToFile(g_sLog, "- Section start (level %d) -", level);
     do
@@ -668,7 +669,7 @@ void GetSprays(KeyValues kv, int level = 0, const char[] category = "", const ch
 
                 if (strlen(sValue) > 0)
                 {
-                    char sBuffer[PLATFORM_MAX_PATH + 13];
+                    char sBuffer[SPRAY_PATH_LENGTH];
                     Format(sBuffer, sizeof(sBuffer), "%s;;%s", sSection, sValue);
                     array.PushString(sBuffer);
                     if (g_bDebug) LogToFile(g_sLog, "--- Regular key. (Category: %s, Name: %s) \"%s\"", category, name, sBuffer);
@@ -689,11 +690,11 @@ void GetSprays(KeyValues kv, int level = 0, const char[] category = "", const ch
 
 
         // sSplit[0] - count, sSplit[1] - keyword, sSplit[2] - value
-        char sSplit[2][2][PLATFORM_MAX_PATH + 1];
+        char sSplit[2][2][SPRAY_PATH_LENGTH];
 
         for (int i = 0; i < array.Length; i++)
         {
-            char sBuffer[PLATFORM_MAX_PATH + 13];
+            char sBuffer[SPRAY_PATH_LENGTH];
             array.GetString(i, sBuffer, sizeof(sBuffer));
             ExplodeString(sBuffer, ";;", sSplit[i], sizeof(sSplit[]), sizeof(sSplit[][]));
             if (g_bDebug) LogToFile(g_sLog, "- %s: %s -", sSplit[i][0], sSplit[i][1]);
@@ -721,7 +722,7 @@ void AddSpray(const char[] name, const char[] category, const char[][][] values)
     
     if (!bFound)
     {
-        char sFile[PLATFORM_MAX_PATH + 1];
+        char sFile[SPRAY_PATH_LENGTH];
         Format(sFile, sizeof(sFile), "materials/%s.vmt", values[0][1]);
         
         if (!FileExists(sFile))
@@ -732,16 +733,16 @@ void AddSpray(const char[] name, const char[] category, const char[][][] values)
         
         KeyValues kvVTF = CreateKeyValues("LightmappedGeneric");
         FileToKeyValues(kvVTF, sFile);
-        kvVTF.GetString("$basetexture", values[0][1], (PLATFORM_MAX_PATH + 1), values[0][1]);
+        kvVTF.GetString("$basetexture", values[0][1], (SPRAY_PATH_LENGTH), values[0][1]);
         delete kvVTF;
         
-        char sFileVTF[PLATFORM_MAX_PATH + 1];
+        char sFileVTF[SPRAY_PATH_LENGTH];
         Format(sFileVTF, sizeof(sFileVTF), "materials/%s.vtf", values[0][1]);
         
         AddFileToDownloadsTable(sFile);
         AddFileToDownloadsTable(sFileVTF);
         
-        strcopy(g_iSprays[g_iCount][sSpray], (PLATFORM_MAX_PATH + 1), name);
+        strcopy(g_iSprays[g_iCount][sSpray], (SPRAY_PATH_LENGTH), name);
         
         int iPrecache = PrecacheDecal(values[0][1], true);
         g_iSprays[g_iCount][iPrecacheID] = iPrecache;
