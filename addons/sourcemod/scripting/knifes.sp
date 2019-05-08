@@ -152,7 +152,7 @@ public Action OnPlayerRunCmd(int client, int& buttons, int& impulse, float vel[3
         return Plugin_Continue;
     }
 
-    if (!IsValidEntity(weapon) && weapon < 1)
+    if (!IsValidEntity(weapon) || weapon < 1)
     {
         return Plugin_Continue;
     }
