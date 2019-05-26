@@ -117,6 +117,7 @@ public void OnClientPutInServer(int client)
 {
     SDKHook(client, SDKHook_WeaponEquipPost, OnWeaponEquipPost);
     SDKHook(client, SDKHook_WeaponSwitchPost, OnWeaponSwitchPost);
+    SDKHook(client, SDKHook_PreThink, OnPreThink);
 }
 
 public void OnClientPostAdminCheck(int client)
@@ -134,11 +135,41 @@ public void OnWeaponSwitchPost(int client, int weapon)
         return;
     }
 
+    if (!IsValidWeapon(weapon))
+    {
+        return;
+    }
+
     if (IsClientValid(client) && IsPlayerAlive(client))
     {
         int iDef = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
         
-        if (CSGOItems_IsDefIndexKnife(iDef) && (iDef == 75 || iDef == 76 || iDef == 78))
+        if (iDef == 75 || iDef == 76 || iDef == 78)
+        {
+            SetEntPropFloat(weapon, Prop_Send, "m_flNextSecondaryAttack", GetGameTime() + 99999999.9);
+        }
+    }
+}
+
+public Action OnPreThink(int client)
+{
+    if (g_cAllowThrow.BoolValue)
+    {
+        return;
+    }
+
+    int weapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+
+    if (!IsValidWeapon(weapon))
+    {
+        return;
+    }
+
+    if (IsClientValid(client) && IsPlayerAlive(client))
+    {
+        int iDef = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
+        
+        if (iDef == 75 || iDef == 76 || iDef == 78)
         {
             SetEntPropFloat(weapon, Prop_Send, "m_flNextSecondaryAttack", GetGameTime() + 99999999.9);
         }
@@ -152,7 +183,7 @@ public Action OnPlayerRunCmd(int client, int& buttons, int& impulse, float vel[3
         return Plugin_Continue;
     }
 
-    if (!IsValidEntity(weapon) || weapon < 1)
+    if (!IsValidWeapon(weapon))
     {
         return Plugin_Continue;
     }
@@ -163,7 +194,7 @@ public Action OnPlayerRunCmd(int client, int& buttons, int& impulse, float vel[3
         {
             int iDef = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
             
-            if (CSGOItems_IsDefIndexKnife(iDef) && (iDef == 75 || iDef == 76 || iDef == 78))
+            if (iDef == 75 || iDef == 76 || iDef == 78)
             {
                 SetEntPropFloat(weapon, Prop_Send, "m_flNextSecondaryAttack", GetGameTime() + 99999999.9);
                 buttons &= ~IN_ATTACK2;
@@ -177,6 +208,11 @@ public Action OnPlayerRunCmd(int client, int& buttons, int& impulse, float vel[3
 
 public void OnWeaponEquipPost(int client, int weapon)
 {
+    if (!IsValidWeapon(weapon))
+    {
+        return;
+    }
+
     if (IsClientValid(client) && IsPlayerAlive(client))
     {
         int iDef = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
@@ -803,4 +839,24 @@ stock bool IsClientValid(int client, bool bots = false)
     }
     
     return false;
+}
+
+bool IsValidWeapon(int weapon)
+{
+    if (weapon < 1)
+    {
+        return false;
+    }
+
+    if (!IsValidEntity(weapon))
+    {
+        return false;
+    }
+
+    if (!HasEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex"))
+    {
+        return false;
+    }
+
+    return true;
 }
