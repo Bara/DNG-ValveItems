@@ -32,10 +32,11 @@ int g_iLastChange[MAXPLAYERS + 1] =  { -1, ... };
 ConVar g_cMessage = null;
 ConVar g_cShowDisableKnifes = null;
 ConVar g_cFlag = null;
-ConVar g_cIgnoreIDs = null;
 ConVar g_cAllowThrow = null;
 
 Database g_dDB = null;
+
+ArrayList g_aIgnore = null;
 
 public Plugin myinfo = 
 {
@@ -80,7 +81,6 @@ public void OnPluginStart()
     g_cMessage = AutoExecConfig_CreateConVar("knifes_show_message", "1", "Show message on knife selection", _, true, 0.0, true, 1.0);
     g_cShowDisableKnifes = AutoExecConfig_CreateConVar("knifes_show_disabled_knife", "1", "Show disabled knifes (for user without flag)", _, true, 0.0, true, 1.0);
     g_cFlag = AutoExecConfig_CreateConVar("knifes_flag", "t", "Flag to get access");
-    g_cIgnoreIDs = AutoExecConfig_CreateConVar("knifes_ignore_ids", "41;74;80;", "Seperate each ID with \";\"");
     g_cAllowThrow = AutoExecConfig_CreateConVar("knifes_allow_throw", "0", "Allow throw of axe, spanner and wrench?", _, true, 0.0, true, 1.0);
     AutoExecConfig_ExecuteFile();
     AutoExecConfig_CleanFile();
@@ -93,11 +93,15 @@ public void OnPluginStart()
     }
     
     connectSQL();
+
+    LoadIgnoreIDs();
 }
 
 public void OnMapStart()
 {
     connectSQL();
+
+    LoadIgnoreIDs();
 }
 
 void connectSQL()
@@ -111,6 +115,37 @@ void connectSQL()
         SetFailState("Can't find an entry in your databases.cfg with the name \"valve\"");
         return;
     }
+}
+
+void LoadIgnoreIDs()
+{
+    delete g_aIgnore;
+    g_aIgnore = new ArrayList();
+
+    char sFile[PLATFORM_MAX_PATH + 1];
+    BuildPath(Path_SM, sFile, sizeof(sFile), "configs/knifes_ignore.ini");
+
+    File hFile = OpenFile(sFile, "rt");
+
+    if (hFile == null)
+    {
+        SetFailState("[Knifes] Can't open File: %s", sFile);
+    }
+
+    char sLine[MAX_NAME_LENGTH];
+
+    while (!hFile.EndOfFile() && hFile.ReadLine(sLine, sizeof(sLine)))
+    {
+        TrimString(sLine);
+        StripQuotes(sLine);
+
+        if (strlen(sLine) > 1)
+        {
+            g_aIgnore.Push(StringToInt(sLine));
+        }
+    }
+
+    delete hFile;
 }
 
 public void OnClientPutInServer(int client)
@@ -486,15 +521,7 @@ void ShowKnifeMenu(int client)
     }
 
     int iCount = CSGOItems_GetWeaponCount();
-
-    char sList[128];
-    g_cIgnoreIDs.GetString(sList, sizeof(sList));
-
-    PrintToChat(client, "sList: %s", sList);
-
-    char[][] sIgnoreIDs = new char[iCount][12];
-    int iIDs = ExplodeString(sList, ";", sIgnoreIDs, iCount, 12);
-        
+    
     for (int i = 0; i <= iCount; i++)
     {
         int defIndex = CSGOItems_GetWeaponDefIndexByWeaponNum(i);
@@ -517,12 +544,16 @@ void ShowKnifeMenu(int client)
             }
 
             bool bContinue = false;
-            for(int j = 0; j < iIDs; j++)
+
+            if (g_aIgnore.Length > 0)
             {
-                if (StringToInt(sIgnoreIDs[j]) == defIndex)
+                for (int j = 0; j < g_aIgnore.Length; j++)
                 {
-                    bContinue = true;
-                    break;
+                    if (g_aIgnore.Get(j) == defIndex)
+                    {
+                        bContinue = true;
+                        break;
+                    }
                 }
             }
 
