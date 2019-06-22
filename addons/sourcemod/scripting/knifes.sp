@@ -31,8 +31,8 @@ int g_iLastChange[MAXPLAYERS + 1] =  { -1, ... };
 
 ConVar g_cMessage = null;
 ConVar g_cShowDisableKnifes = null;
-ConVar g_cFlag = null;
 ConVar g_cAllowThrow = null;
+ConVar g_cGiveKnife = null;
 
 Database g_dDB = null;
 
@@ -80,8 +80,8 @@ public void OnPluginStart()
     AutoExecConfig_SetFile("plugin.knifes");
     g_cMessage = AutoExecConfig_CreateConVar("knifes_show_message", "1", "Show message on knife selection", _, true, 0.0, true, 1.0);
     g_cShowDisableKnifes = AutoExecConfig_CreateConVar("knifes_show_disabled_knife", "1", "Show disabled knifes (for user without flag)", _, true, 0.0, true, 1.0);
-    g_cFlag = AutoExecConfig_CreateConVar("knifes_flag", "t", "Flag to get access");
     g_cAllowThrow = AutoExecConfig_CreateConVar("knifes_allow_throw", "0", "Allow throw of axe, spanner and wrench?", _, true, 0.0, true, 1.0);
+    g_cGiveKnife = AutoExecConfig_CreateConVar("knifes_give_knife", "0", "Give knife to client if client doesn't have one.", _, true, 0.0, true, 1.0);
     AutoExecConfig_ExecuteFile();
     AutoExecConfig_CleanFile();
     
@@ -795,7 +795,7 @@ void ReplaceClientKnife(int client)
         CSGOItems_GetWeaponClassNameByDefIndex(g_iKnife[client], sClassname, sizeof(sClassname));
         bool success = CSGOItems_RemoveKnife(client);
         
-        if (success)
+        if (success || g_cGiveKnife.BoolValue)
         {
             DataPack pack = new DataPack();
             RequestFrame(Frame_GivePlayerItem, pack);
@@ -807,7 +807,7 @@ void ReplaceClientKnife(int client)
     {
         bool success = CSGOItems_RemoveKnife(client);
         
-        if (success)
+        if (success || g_cGiveKnife.BoolValue)
         {
             DataPack pack = new DataPack();
             RequestFrame(Frame_GivePlayerItem, pack);
