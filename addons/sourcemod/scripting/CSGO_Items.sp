@@ -800,7 +800,7 @@ public Action Timer_SyncLanguage(Handle hTimer)
 		return Plugin_Continue;
 	}
 	
-	Handle hLanguageFile = OpenFile("resource/csgo_english_utf8.txt", "r");
+	Handle hLanguageFile = OpenFile("resource/csgo_english.txt.utf8", "r");
 	
 	if (hLanguageFile != null) {
 		ReadFileString(hLanguageFile, g_szLangPhrases, 21982192);
@@ -809,7 +809,7 @@ public Action Timer_SyncLanguage(Handle hTimer)
 		g_bLanguageDownloading = false;
 		delete hLanguageFile;
 		
-		DeleteFile("resource/csgo_english_utf8.txt");
+		DeleteFile("resource/csgo_english.txt.utf8");
 		
 		if (g_iLanguageDownloadAttempts < 10) {
 			RetrieveLanguage();
