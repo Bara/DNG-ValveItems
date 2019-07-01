@@ -7,6 +7,7 @@
 #include <multicolors>
 #include <autoexecconfig>
 #include <groupstatus>
+#include <n_arms_fix>
 
 #pragma newdecls required
 
@@ -67,8 +68,6 @@ public void OnPluginStart()
 
     RegConsoleCmd("sm_glove", Command_Gloves);
     RegConsoleCmd("sm_gloves", Command_Gloves);
-
-    HookEvent("player_spawn", Event_PlayerSpawn, EventHookMode_Post);
 
     g_hAllSkins = RegClientCookie("ws_allskins", "Show all skins", CookieAccess_Private);
     SetCookiePrefabMenu(g_hAllSkins, CookieMenu_OnOff_Int, "Show all skins", Cookie_Request);
@@ -284,24 +283,9 @@ public Action Command_Gloves(int client, int args)
     return Plugin_Continue;
 }
 
-public void Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
+public void ArmsFix_OnArmsSafe(int client)
 {
-    int client = GetClientOfUserId(event.GetInt("userid"));
-
-    if(IsClientValid(client))
-    {
-        CreateTimer(0.2, Timer_UpdateClientGlove, GetClientUserId(client));
-    }
-}
-
-public Action Timer_UpdateClientGlove(Handle timer, any userid)
-{
-    int client = GetClientOfUserId(userid);
-
-    if (IsClientValid(client))
-    {
-        UpdatePlayerGlove(client);
-    }
+    UpdatePlayerGlove(client);
 }
 
 void ShowGlovesMenu(int client)
@@ -582,7 +566,7 @@ void UpdatePlayerGlove(int client)
         AcceptEntityInput(ent, "KillHierarchy");
     }
 
-    SetEntPropString(client, Prop_Send, "m_szArmsModel", "");
+    ArmsFix_SetDefaults(client);
 
     ent = CreateEntityByName("wearable_item");
 
@@ -596,34 +580,41 @@ void UpdatePlayerGlove(int client)
         SetEntPropFloat(ent, Prop_Send, "m_flFallbackWear", 0.0001);
         SetEntPropEnt(ent, Prop_Data, "m_hOwnerEntity", client);
         SetEntPropEnt(ent, Prop_Data, "m_hParent", client);
-        // SetEntPropEnt(ent, Prop_Data, "m_hMoveParent", client); // For WorlModel support
+        SetEntPropEnt(ent, Prop_Data, "m_hMoveParent", client); // For WorlModel support
         SetEntProp(ent, Prop_Send, "m_bInitialized", 1);
 
         DispatchSpawn(ent);
 
         SetEntPropEnt(client, Prop_Send, "m_hMyWearables", ent);
-        // SetEntProp(client, Prop_Send, "m_nBody", 1); // For WorlModel support
+        SetEntProp(client, Prop_Send, "m_nBody", 1); // For WorlModel support
     }
 
-    if(iWeapon != -1)
+    /* if(iWeapon != -1)
     {
-        DataPack dpack;
-        CreateDataTimer(0.1, ResetGlovesTimer, dpack);
-        dpack.WriteCell(client);
-        dpack.WriteCell(iWeapon);
-    }
+        DataPack pack = new DataPack();
+        CreateDataTimer(0.1, Timer_SetActiveWeapon, pack);
+        pack.WriteCell(client);
+        pack.WriteCell(iWeapon);
+    } */
 }
 
-public Action ResetGlovesTimer(Handle timer, DataPack pack)
+public Action Timer_SetActiveWeapon(Handle timer, DataPack pack)
 {
     ResetPack(pack);
     int client = pack.ReadCell();
     int iWeapon = pack.ReadCell();
 
-    if(IsClientValid(client) && IsValidEntity(iWeapon))
+    if(IsClientValid(client))
     {
-        SetEntPropEnt(client, Prop_Send, "m_hActiveWeapon", iWeapon);
+        if (IsValidEntity(iWeapon))
+        {
+            CSGOItems_SetActiveWeapon(client, iWeapon);
+        }
+
+        ArmsFix_RefreshView(client);
     }
+
+
 }
 
 stock bool IsClientValid(int client, bool bots = false)

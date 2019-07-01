@@ -85,6 +85,7 @@ public void OnPluginStart()
     
     RegConsoleCmd("sm_sprays", Command_Sprays);
     RegConsoleCmd("sm_myspray", Command_MySpray);
+    RegConsoleCmd("sm_spray", Command_Spray);
     
     HookEvent("player_spawn", Event_PlayerSpawn);
 
@@ -94,7 +95,7 @@ public void OnPluginStart()
     g_cTime = AutoExecConfig_CreateConVar("sprays_time", "30", "Time to spray a new spray");
     g_cVIPTime = AutoExecConfig_CreateConVar("sprays_vip_time", "15", "Time to spray a new spray as vip");
     g_cDistance = AutoExecConfig_CreateConVar("sprays_distance", "115", "Max. distance from player");
-    g_cUse = AutoExecConfig_CreateConVar("sprays_use", "1", "Spray with '+use'?", _, true, 0.0, true, 1.0);
+    g_cUse = AutoExecConfig_CreateConVar("sprays_use", "1", "Spray with '+use'? If 0 use you can use !spray", _, true, 0.0, true, 1.0);
     g_cFlag = AutoExecConfig_CreateConVar("sprays_flag", "", "Default flag for sprays");
     g_cValveFlag = AutoExecConfig_CreateConVar("sprays_valve_flag", "1", "Use VIP Flag to get access to valve sprays?", _, true, 0.0, true, 1.0);
     g_cEnableValve = AutoExecConfig_CreateConVar("sprays_enable_valve", "1", "Enable valve sprays?", _, true, 0.0, true, 1.0);
@@ -417,6 +418,23 @@ public Action Command_MySpray(int client, int args)
     return Plugin_Handled;
 }
 
+public Action Command_Spray(int client, int args)
+{
+    if(!IsClientValid(client))
+    {
+        return Plugin_Handled;
+    }
+
+    if (g_cUse.BoolValue)
+    {
+        return Plugin_Handled;
+    }
+
+    ClientSpray(client);
+
+    return Plugin_Handled;
+}
+
 public int Menu_ChangeSpray(Handle menu, MenuAction action, int client, int param) 
 {
     if (action == MenuAction_Select)
@@ -491,104 +509,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse)
     
     if (buttons & IN_USE)
     {
-        if(!IsPlayerAlive(client))
-        {
-            return;
-        }
-
-        int iRemain = (GetTime() - g_iLastSprayed[client]);
-        
-        int iDelay = g_cTime.IntValue;
-        
-        if (g_cValveFlag.BoolValue)
-        {
-            iDelay = g_cVIPTime.IntValue;
-        }
-        
-        if(iRemain < iDelay || g_iLastSprayed[client] == -1)
-        {
-            return;
-        }
-
-        float fClientEyePosition[3];
-        GetClientEyePosition(client, fClientEyePosition);
-
-        float fClientEyeViewPoint[3];
-        GetPlayerEyeViewPoint(client, fClientEyeViewPoint);
-
-        float fVector[3];
-        MakeVectorFromPoints(fClientEyeViewPoint, fClientEyePosition, fVector);
-
-        if(GetVectorLength(fVector) > g_cDistance.FloatValue)
-        {
-            return;
-        }
-
-        Action res = Plugin_Continue;
-        Call_StartForward(g_hOnSpray);
-        Call_PushCell(client);
-        Call_PushArray(fVector, 3);
-        Call_Finish(res);
-
-        if (res == Plugin_Handled || res == Plugin_Stop)
-        {
-            return;
-        }
-
-        if(g_iSpray[client] == 0)
-        {
-            int rand = GetRandomInt(1, g_iCount - 1);
-            int spray = g_iSprays[rand][iPrecacheID];
-            
-            if (g_iSprays[rand][bValve] && !(g_cValveFlag.BoolValue))
-            {
-                g_iSpray[client] = 0;
-                SetClientCookie(client, g_hCookie, "0");
-                
-                return;
-            }
-            
-            TE_SetupBSPDecal(fClientEyeViewPoint, spray);
-
-            if (g_bDebug)
-            {
-                void code = LogToFile(g_sFile, "[SPRAY] Player: %N, ID: %d, PrecacheID: %d", client, rand, spray);
-                PrintToServer("[Spray] %d", code);
-            }
-        }
-        else
-        {
-            if(g_iSprays[g_iSpray[client]][iPrecacheID] == 0)
-            {
-                CPrintToChat(client, "%s Ihr Spray funktioniert leider nicht. Wählen Sie ein neues mit '!sprays'.", PTAG);
-                g_iSpray[client] = 0;
-                SetClientCookie(client, g_hCookie, "0");
-                
-                return;
-            }
-            
-            if (g_iSprays[g_iSpray[client]][bValve] && !(g_cValveFlag.BoolValue))
-            {
-                CPrintToChat(client, "%s Sie haben ein ungültiges Spray!", PTAG);
-                g_iSpray[client] = 0;
-                SetClientCookie(client, g_hCookie, "0");
-                
-                return;
-            }
-            
-            TE_SetupBSPDecal(fClientEyeViewPoint, g_iSprays[g_iSpray[client]][iPrecacheID]);
-
-            if (g_bDebug)
-            {
-                void code = LogToFile(g_sFile, "[SPRAY] Player: %N, ID: %d, PrecacheID: %d", client, g_iSpray[client], g_iSprays[g_iSpray[client]][iPrecacheID]);
-                PrintToServer("[Spray] %d", code);
-            }
-        }
-        TE_SendToAll();
-        
-        PostMessageAndSound(client, fVector);
-
-        g_iLastSprayed[client] = GetTime();
+        ClientSpray(client);
     }
 }
 
@@ -779,4 +700,106 @@ stock bool IsClientValid(int client, bool bots = false)
     }
     
     return false;
+}
+
+bool ClientSpray(int client)
+{
+    if(!IsPlayerAlive(client))
+    {
+        return;
+    }
+
+    int iRemain = (GetTime() - g_iLastSprayed[client]);
+    
+    int iDelay = g_cTime.IntValue;
+    
+    if (g_cValveFlag.BoolValue)
+    {
+        iDelay = g_cVIPTime.IntValue;
+    }
+    
+    if(iRemain < iDelay || g_iLastSprayed[client] == -1)
+    {
+        return;
+    }
+
+    float fClientEyePosition[3];
+    GetClientEyePosition(client, fClientEyePosition);
+
+    float fClientEyeViewPoint[3];
+    GetPlayerEyeViewPoint(client, fClientEyeViewPoint);
+
+    float fVector[3];
+    MakeVectorFromPoints(fClientEyeViewPoint, fClientEyePosition, fVector);
+
+    if(GetVectorLength(fVector) > g_cDistance.FloatValue)
+    {
+        return;
+    }
+
+    Action res = Plugin_Continue;
+    Call_StartForward(g_hOnSpray);
+    Call_PushCell(client);
+    Call_PushArray(fVector, 3);
+    Call_Finish(res);
+
+    if (res == Plugin_Handled || res == Plugin_Stop)
+    {
+        return;
+    }
+
+    if(g_iSpray[client] == 0)
+    {
+        int rand = GetRandomInt(1, g_iCount - 1);
+        int spray = g_iSprays[rand][iPrecacheID];
+        
+        if (g_iSprays[rand][bValve] && !(g_cValveFlag.BoolValue))
+        {
+            g_iSpray[client] = 0;
+            SetClientCookie(client, g_hCookie, "0");
+            
+            return;
+        }
+        
+        TE_SetupBSPDecal(fClientEyeViewPoint, spray);
+
+        if (g_bDebug)
+        {
+            void code = LogToFile(g_sFile, "[SPRAY] Player: %N, ID: %d, PrecacheID: %d", client, rand, spray);
+            PrintToServer("[Spray] %d", code);
+        }
+    }
+    else
+    {
+        if(g_iSprays[g_iSpray[client]][iPrecacheID] == 0)
+        {
+            CPrintToChat(client, "%s Ihr Spray funktioniert leider nicht. Wählen Sie ein neues mit '!sprays'.", PTAG);
+            g_iSpray[client] = 0;
+            SetClientCookie(client, g_hCookie, "0");
+            
+            return;
+        }
+        
+        if (g_iSprays[g_iSpray[client]][bValve] && !(g_cValveFlag.BoolValue))
+        {
+            CPrintToChat(client, "%s Sie haben ein ungültiges Spray!", PTAG);
+            g_iSpray[client] = 0;
+            SetClientCookie(client, g_hCookie, "0");
+            
+            return;
+        }
+        
+        TE_SetupBSPDecal(fClientEyeViewPoint, g_iSprays[g_iSpray[client]][iPrecacheID]);
+
+        if (g_bDebug)
+        {
+            void code = LogToFile(g_sFile, "[SPRAY] Player: %N, ID: %d, PrecacheID: %d", client, g_iSpray[client], g_iSprays[g_iSpray[client]][iPrecacheID]);
+            PrintToServer("[Spray] %d", code);
+        }
+    }
+    TE_SendToAll();
+    
+    PostMessageAndSound(client, fVector);
+
+    g_iLastSprayed[client] = GetTime();
 }
