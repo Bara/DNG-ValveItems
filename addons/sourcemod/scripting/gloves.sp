@@ -26,9 +26,6 @@ int g_iSkinSite[MAXPLAYERS + 1] = { -1, ...};
 int g_iLastGloveChange[MAXPLAYERS + 1] = { -1, ...};
 int g_iLastSkinChange[MAXPLAYERS + 1] = { -1, ...};
 
-Handle g_hAllSkins = null;
-bool g_bAllSkins[MAXPLAYERS + 1] = { false, ... };
-
 ConVar g_cFlag = null;
 ConVar g_cInterval = null;
 
@@ -69,9 +66,6 @@ public void OnPluginStart()
     RegConsoleCmd("sm_glove", Command_Gloves);
     RegConsoleCmd("sm_gloves", Command_Gloves);
 
-    g_hAllSkins = RegClientCookie("ws_allskins", "Show all skins", CookieAccess_Private);
-    SetCookiePrefabMenu(g_hAllSkins, CookieMenu_OnOff_Int, "Show all skins", Cookie_Request);
-
     AutoExecConfig_SetCreateDirectory(true);
     AutoExecConfig_SetCreateFile(true);
     AutoExecConfig_SetFile("plugin.gloves");
@@ -79,20 +73,6 @@ public void OnPluginStart()
     g_cInterval = AutoExecConfig_CreateConVar("gloves_interval", "t", "Interval between changes");
     AutoExecConfig_ExecuteFile();
     AutoExecConfig_CleanFile();
-
-    LoopClients(i)
-    {
-        OnClientPutInServer(i);
-
-        if (!AreClientCookiesCached(i))
-        {
-            g_bAllSkins[i] = false;
-            continue;
-        }
-
-        OnClientCookiesCached(i);
-    }
-
     connectSQL();
 
     LoadTranslations("gloves.phrases");
@@ -153,33 +133,6 @@ public void SQL_CreateTable(Database db, DBResultSet results, const char[] error
     }
 }
 
-public void OnClientPutInServer(int client)
-{
-    if(IsClientValid(client))
-    {
-        if (!AreClientCookiesCached(client))
-        {
-            g_bAllSkins[client] = false;
-        }
-        else
-            OnClientCookiesCached(client);
-    }
-}
-
-public void OnClientCookiesCached(int client)
-{
-    char sValue[8];
-    GetClientCookie(client, g_hAllSkins, sValue, sizeof(sValue));
-    g_bAllSkins[client] = (sValue[0] != '\0' && StringToInt(sValue));
-}
-
-public void Cookie_Request(int client, CookieMenuAction action, any info, char[] buffer, int maxlen)
-{
-    if(action == CookieMenuAction_SelectOption)
-    {
-        OnClientCookiesCached(client);
-    }
-}
 public void OnClientPostAdminCheck(int client)
 {
     if(IsClientValid(client))
@@ -307,17 +260,6 @@ void ShowGlovesMenu(int client)
 
     menu.SetTitle(sTitle);
 
-    if (g_bAllSkins[client])
-    {
-        Format(sBuffer, sizeof(sBuffer), "%T\n ", "Menu Suitable: Yes", client);
-        menu.AddItem("changeAllSkins", sBuffer);
-    }
-    else
-    {
-        Format(sBuffer, sizeof(sBuffer), "%T\n ", "Menu Suitable: All", client);
-        menu.AddItem("changeAllSkins", sBuffer);
-    }
-
     if (g_iGlove[client] != 0)
     {
         menu.AddItem("0", "Keine Gloves");
@@ -361,42 +303,18 @@ public int Menu_Gloves(Menu menu, MenuAction action, int client, int param)
             char sIndex[DISPLAY_LENGTH];
             menu.GetItem(param, sIndex, sizeof(sIndex));
 
-            if (StrEqual(sIndex, "changeAllSkins", false))
-            {
-                if (g_bAllSkins[client])
-                {
-                    CPrintToChat(client, "%T", "Suitable: Yes", client, PTAG);
-                    g_bAllSkins[client] = false;
-                }
-                else
-                {
-                    CPrintToChat(client, "%T", "Suitable: All", client, PTAG);
-                    g_bAllSkins[client] = true;
-                }
+            int iIndex = StringToInt(sIndex);
 
-                char buffer[5];
-                IntToString(g_bAllSkins[client], buffer, 5);
-                SetClientCookie(client, g_hAllSkins, buffer);
+            g_iLastGloveChange[client] = GetTime();
+            g_iGlove[client] = iIndex;
 
-                g_iGloveSite[client] = menu.Selection;
+            char sDisplay[DISPLAY_LENGTH];
+            CSGOItems_GetGlovesDisplayNameByDefIndex(g_iGlove[client], sDisplay, sizeof(sDisplay));
+            CPrintToChat(client, "%T", "Glove Choosed", client, PTAG, sDisplay);
 
-                RequestFrame(Frame_OpenMenu, GetClientUserId(client));
-            }
-            else
-            {
-                int iIndex = StringToInt(sIndex);
+            g_iGloveSite[client] = menu.Selection;
 
-                g_iLastGloveChange[client] = GetTime();
-                g_iGlove[client] = iIndex;
-
-                char sDisplay[DISPLAY_LENGTH];
-                CSGOItems_GetGlovesDisplayNameByDefIndex(g_iGlove[client], sDisplay, sizeof(sDisplay));
-                CPrintToChat(client, "%T", "Glove Choosed", client, PTAG, sDisplay);
-
-                g_iGloveSite[client] = menu.Selection;
-
-                ShowSkinsMenu(client);
-            }
+            ShowSkinsMenu(client);
         }
         else
         {
@@ -462,15 +380,12 @@ void ShowSkinsMenu(int client)
         {
             continue;
         }
+        
+        int iGloveNum = CSGOItems_GetGlovesNumByDefIndex(g_iGlove[client]);
 
-        if (!g_bAllSkins[client])
+        if (!CSGOItems_IsNativeSkin(i, iGloveNum, ITEMTYPE_GLOVES))
         {
-            int iGloveNum = CSGOItems_GetGlovesNumByDefIndex(g_iGlove[client]);
-
-            if (!CSGOItems_IsNativeSkin(i, iGloveNum, ITEMTYPE_GLOVES))
-            {
-                continue;
-            }
+            continue;
         }
 
         IntToString(iIndex, sBuffer, sizeof(sBuffer));
@@ -566,7 +481,7 @@ void UpdatePlayerGlove(int client)
         AcceptEntityInput(ent, "KillHierarchy");
     }
 
-    ArmsFix_SetDefaults(client);
+    // ArmsFix_SetDefaults(client);
 
     ent = CreateEntityByName("wearable_item");
 
@@ -611,7 +526,7 @@ public Action Timer_SetActiveWeapon(Handle timer, DataPack pack)
             CSGOItems_SetActiveWeapon(client, iWeapon);
         }
 
-        ArmsFix_RefreshView(client);
+        // RefreshVM(client);
     }
 
 
@@ -625,6 +540,24 @@ stock bool IsClientValid(int client, bool bots = false)
         {
             return true;
         }
+    }
+    
+    return false;
+}
+
+stock bool RefreshVM(int iClient)
+{
+    if (!IsPlayerAlive(iClient)) {
+        return false;
+    }
+    
+    Event evEvent = CreateEvent("player_spawn", true);
+    
+    if (evEvent != null) {
+        evEvent.SetInt("userid", GetClientUserId(iClient));
+        evEvent.FireToClient(iClient);
+        evEvent.Cancel();
+        return true;
     }
     
     return false;
