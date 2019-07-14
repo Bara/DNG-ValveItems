@@ -67,8 +67,6 @@ StringMap g_sExtraNames = null;
 Handle g_hAllSkins = null;
 bool g_bAllSkins[MAXPLAYERS + 1] = { false, ... };
 
-ConVar g_cFlag = null;
-ConVar g_cNFlag = null;
 ConVar g_cInterval = null;
 
 #include "weaponPaints/sql.sp"
@@ -96,8 +94,6 @@ public void OnPluginStart()
     AutoExecConfig_SetCreateDirectory(true);
     AutoExecConfig_SetCreateFile(true);
     AutoExecConfig_SetFile("plugin.weaponpaints");
-    g_cFlag = AutoExecConfig_CreateConVar("weaponpaints_flag", "t", "Flag to get access");
-    g_cNFlag = AutoExecConfig_CreateConVar("weaponpaints_nametag_flag", "t", "Flag to get access for nametags");
     g_cInterval = AutoExecConfig_CreateConVar("weaponpaints_interval", "5", "Interval between changes");
     AutoExecConfig_ExecuteFile();
     AutoExecConfig_CleanFile();
