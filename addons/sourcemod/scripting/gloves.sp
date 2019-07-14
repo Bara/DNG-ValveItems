@@ -7,6 +7,8 @@
 #include <multicolors>
 #include <autoexecconfig>
 #include <groupstatus>
+
+#undef REQUIRED_PLUGIN
 #include <n_arms_fix>
 
 #pragma newdecls required
@@ -29,6 +31,8 @@ int g_iLastSkinChange[MAXPLAYERS + 1] = { -1, ...};
 ConVar g_cFlag = null;
 ConVar g_cInterval = null;
 
+bool g_bArmsFix = false;
+
 public Plugin myinfo = 
 {
     name = "Gloves",
@@ -43,6 +47,11 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
     CreateNative("HasClientGloves", Native_HasGloves);
 
     RegPluginLibrary("gloves");
+
+    MarkNativeAsOptional("ArmsFix_SetDefaults");
+    MarkNativeAsOptional("ArmsFix_HasDefaultArms");
+    MarkNativeAsOptional("ArmsFix_SetDefaultArms");
+    MarkNativeAsOptional("ArmsFix_RefreshView");
 
     return APLRes_Success;
 }
@@ -77,6 +86,30 @@ public void OnPluginStart()
 
     LoadTranslations("gloves.phrases");
     LoadTranslations("groupstatus.phrases");
+}
+
+public void OnAllPluginsLoaded()
+{
+    if (LibraryExists("CSGO_ArmsFix"))
+    {
+        g_bArmsFix = true;
+    }
+}
+
+public void OnLibraryAdded(const char[] library)
+{
+    if (StrEqual(library, "CSGO_ArmsFix", false))
+    {
+        g_bArmsFix = true;
+    }
+}
+
+public void OnLibraryRemoved(const char[] library)
+{
+    if (StrEqual(library, "CSGO_ArmsFix", false))
+    {
+        g_bArmsFix = false;
+    }
 }
 
 public void OnMapStart()
@@ -380,7 +413,7 @@ void ShowSkinsMenu(int client)
         {
             continue;
         }
-        
+
         int iGloveNum = CSGOItems_GetGlovesNumByDefIndex(g_iGlove[client]);
 
         if (!CSGOItems_IsNativeSkin(i, iGloveNum, ITEMTYPE_GLOVES))
@@ -481,7 +514,10 @@ void UpdatePlayerGlove(int client)
         AcceptEntityInput(ent, "KillHierarchy");
     }
 
-    // ArmsFix_SetDefaults(client);
+    if (g_bArmsFix)
+    {
+        ArmsFix_SetDefaults(client);
+    }
 
     ent = CreateEntityByName("wearable_item");
 
