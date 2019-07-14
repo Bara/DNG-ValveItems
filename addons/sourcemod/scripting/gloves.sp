@@ -28,7 +28,6 @@ int g_iSkinSite[MAXPLAYERS + 1] = { -1, ...};
 int g_iLastGloveChange[MAXPLAYERS + 1] = { -1, ...};
 int g_iLastSkinChange[MAXPLAYERS + 1] = { -1, ...};
 
-ConVar g_cFlag = null;
 ConVar g_cInterval = null;
 
 bool g_bArmsFix = false;
@@ -78,7 +77,6 @@ public void OnPluginStart()
     AutoExecConfig_SetCreateDirectory(true);
     AutoExecConfig_SetCreateFile(true);
     AutoExecConfig_SetFile("plugin.gloves");
-    g_cFlag = AutoExecConfig_CreateConVar("gloves_flag", "t", "Flag to get access");
     g_cInterval = AutoExecConfig_CreateConVar("gloves_interval", "t", "Interval between changes");
     AutoExecConfig_ExecuteFile();
     AutoExecConfig_CleanFile();
