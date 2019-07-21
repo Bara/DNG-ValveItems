@@ -36,6 +36,7 @@ int g_iLastSprayed[MAXPLAYERS + 1];
 int g_iSpray[MAXPLAYERS + 1] =  { 0, ... };
 int g_iSprays[MAX_SPRAYS][sprayList];
 int g_iCount = 1;
+int g_iSprayContest = -1;
 
 bool g_bDebug = false;
 
@@ -73,6 +74,7 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
     CreateNative("Sprays_GetClientSpray", Native_GetClientSpray);
     CreateNative("Sprays_SetClientSpray", Native_SetClientSpray);
     CreateNative("Sprays_ResetClientTime", Native_ResetClientTime);
+    CreateNative("Sprays_SetSprayContest", Native_SetSprayContest);
     
     RegPluginLibrary("sprays");
     
@@ -543,6 +545,24 @@ public int Native_ResetClientTime(Handle plugin, int numParams)
     g_iLastSprayed[client] = false;
 }
 
+public int Native_SetSprayContest(Handle plugin, int numParams)
+{
+    if (g_iSprayContest != -1)
+    {
+        return false;
+    }
+
+    int client = GetNativeCell(1);
+
+    g_iSpray[client] = g_iSprayContest;
+
+    char sBuffer[12];
+    IntToString(g_iSpray[client], sBuffer, sizeof(sBuffer));
+    SetClientCookie(client, g_hCookie, sBuffer);
+
+    return true;
+}
+
 void GetSprays(KeyValues kv, int level = 0, const char[] category = "", const char[] name = "")
 {
     char sSection[32];
@@ -666,6 +686,12 @@ void AddSpray(const char[] name, const char[] category, const char values[12][12
         strcopy(g_iSprays[g_iCount][sSpray], (SPRAY_PATH_LENGTH), name);
         
         int iPrecache = PrecacheDecal(values[0][1], true);
+
+        if (StrContains(values[0][1], "spraycontest", false) != -1)
+        {
+            g_iSprayContest = iPrecache;
+        }
+
         g_iSprays[g_iCount][iPrecacheID] = iPrecache;
         strcopy(g_iSprays[g_iCount][sCategory], CATSIZE, category);
 
