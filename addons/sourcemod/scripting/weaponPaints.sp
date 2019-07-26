@@ -89,7 +89,7 @@ public void OnPluginStart()
 {
     RegConsoleCmd("sm_ws", Command_WS);
     RegConsoleCmd("sm_allskins", Command_AllSkins);
-    RegConsoleCmd("sm_nametag", Command_Nametag);
+    // RegConsoleCmd("sm_nametag", Command_Nametag);
 
     AutoExecConfig_SetCreateDirectory(true);
     AutoExecConfig_SetCreateFile(true);
@@ -296,11 +296,11 @@ public Action Command_WS(int client, int args)
         menu.AddItem("wear", sBuffer, ITEMDRAW_DISABLED);
     }
     
-    if(IsPlayerAlive(client))
+    /* if(IsPlayerAlive(client))
     {
         Format(sBuffer, sizeof(sBuffer), "%T", "Menu Change nametag", client);
         menu.AddItem("nametag", sBuffer);
-    }
+    } */
     
     if (g_bAllSkins[client])
     {
