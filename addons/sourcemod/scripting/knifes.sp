@@ -14,6 +14,7 @@
 #include <multicolors>
 #include <autoexecconfig>
 #include <groupstatus>
+#include <PTaH>
 
 #pragma newdecls required
 
@@ -150,9 +151,11 @@ void LoadIgnoreIDs()
 
 public void OnClientPutInServer(int client)
 {
-    SDKHook(client, SDKHook_WeaponEquipPost, OnWeaponEquipPost);
+    // SDKHook(client, SDKHook_WeaponEquipPost, OnWeaponEquipPost);
     SDKHook(client, SDKHook_WeaponSwitchPost, OnWeaponSwitchPost);
     SDKHook(client, SDKHook_PreThink, OnPreThink);
+
+    PTaH(PTaH_GiveNamedItemPre, Hook, GiveNamedItemPre);
 }
 
 public void OnClientPostAdminCheck(int client)
@@ -248,7 +251,7 @@ public void OnWeaponEquipPost(int client, int weapon)
         return;
     }
 
-    if (IsClientValid(client) && IsPlayerAlive(client))
+    if (IsClientValid(client) && g_iKnife[client] > 0 && IsPlayerAlive(client))
     {
         int iDef = GetEntProp(weapon, Prop_Send, "m_iItemDefinitionIndex");
         
@@ -259,7 +262,7 @@ public void OnWeaponEquipPost(int client, int weapon)
                 PrintToChat(client, "OnWeaponEquipPost1 - iDef: %d | g_iKnife: %d", iDef, g_iKnife[client]);
             }
             
-            if (g_iKnife[client] <= 0 && (iDef == 42 || iDef == 59))
+            if (g_iKnife[client] < 1 && (iDef == 42 || iDef == 59))
             {
                 return;
             }
@@ -285,6 +288,27 @@ public void OnWeaponEquipPost(int client, int weapon)
             }
         }
     }
+}
+
+public Action GiveNamedItemPre(int client, char classname[64], CEconItemView &item, bool &ignoredCEconItemView, bool &OriginIsNULL, float Origin[3])
+{
+    if (IsClientValid(client))
+    {
+        int iDef = CSGOItems_GetWeaponDefIndexByClassName(classname);
+
+        char sClass[KNIFE_LENGTH];
+        CSGOItems_GetWeaponClassNameByDefIndex(g_iKnife[client], sClass, sizeof(sClass));
+
+        if (g_bDebug) PrintToChat(client, "GiveNamedItemPre - g_iKnife: %d, classname: %s, sClass: %s", g_iKnife[client], classname, sClass);
+        
+        if (g_iKnife[client] > 0 && CSGOItems_IsDefIndexKnife(iDef) && !StrEqual(classname, sClass, false))
+        {
+            ignoredCEconItemView = true;
+            strcopy(classname, sizeof(classname), sClass);
+            return Plugin_Changed;
+        }
+    }
+    return Plugin_Continue;
 }
 
 public Action Command_DKnife(int client, int args)
@@ -354,7 +378,7 @@ public Action Command_AKnife(int client, int args)
                 int iWeapon = -1;
                 while((iWeapon = GetPlayerWeaponSlot(client, CS_SLOT_KNIFE)) != -1)
                 {
-                    if (CSGOItems_IsValidWeapon(iWeapon))
+                    if (IsValidWeapon(iWeapon))
                     {
                         int def = CSGOItems_GetWeaponDefIndexByWeapon(iWeapon);
                         
@@ -453,12 +477,7 @@ public Action Command_RKnife(int client, int args)
 
 public Action Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 {
-    int client = GetClientOfUserId(event.GetInt("userid"));
-    
-    if(IsClientValid(client) && g_iKnife[client] > 0)
-    {
-        RequestFrame(Frame_PlayerSpawn, event.GetInt("userid"));
-    }
+    RequestFrame(Frame_PlayerSpawn, event.GetInt("userid"));
 }
 
 public void Frame_PlayerSpawn(any userid)
@@ -467,6 +486,10 @@ public void Frame_PlayerSpawn(any userid)
     
     if (IsClientValid(client) && IsPlayerAlive(client) && g_iKnife[client] > 0)
     {
+        if (g_bDebug)
+        {
+            PrintToChat(client, "Frame_PlayerSpawn");
+        }
         ReplaceClientKnife(client);
     }
 }
@@ -534,7 +557,7 @@ void ShowKnifeMenu(int client)
 
             if (g_bDebug)
             {
-                PrintToChat(client, "DefIndex: %d, className: %s, displayName: %s", defIndex, sClassName, sDisplayName);
+                PrintToConsole(client, "DefIndex: %d, className: %s, displayName: %s", defIndex, sClassName, sDisplayName);
             }
             
             if(defIndex == 59 || defIndex == 42)
@@ -789,81 +812,76 @@ public void Knife_DeletePlayer(Database db, DBResultSet results, const char[] er
 
 void ReplaceClientKnife(int client)
 {
-    if(g_iKnife[client] > 0)
+    if (g_bDebug) PrintToChat(client, "ReplaceClientKnife - 1");
+    bool bRemove = RemoveKnife(client);
+    if (g_bDebug) PrintToChat(client, "ReplaceClientKnife - 2, bRemove: %d", bRemove);
+    
+    if (g_cGiveKnife.BoolValue)
     {
-        char sClassname[KNIFE_LENGTH];
-        CSGOItems_GetWeaponClassNameByDefIndex(g_iKnife[client], sClassname, sizeof(sClassname));
-        bool success = CSGOItems_RemoveKnife(client);
-        
-        if (success || g_cGiveKnife.BoolValue)
-        {
-            DataPack pack = new DataPack();
-            RequestFrame(Frame_GivePlayerItem, pack);
-            pack.WriteCell(GetClientUserId(client));
-            pack.WriteString(sClassname);
-        }
+        DataPack pack = new DataPack();
+        RequestFrame(Frame_GivePlayerItem, pack);
+        pack.WriteCell(GetClientUserId(client));
     }
-    else
-    {
-        bool success = CSGOItems_RemoveKnife(client);
-        
-        if (success || g_cGiveKnife.BoolValue)
-        {
-            DataPack pack = new DataPack();
-            RequestFrame(Frame_GivePlayerItem, pack);
-            pack.WriteCell(GetClientUserId(client));
-            pack.WriteString("weapon_knife");
-        }
-    }		
 }
 
-public void Frame_GivePlayerItem(any pack)
+public void Frame_GivePlayerItem(DataPack pack)
 {
-    ResetPack(pack);
-    int client = GetClientOfUserId(ReadPackCell(pack));
+    pack.Reset();
+    int client = GetClientOfUserId(pack.ReadCell());
     char sClass[KNIFE_LENGTH];
-    ReadPackString(pack, sClass, sizeof(sClass));
-    delete view_as<DataPack>(pack);
-    
-    if(IsClientValid(client) && strlen(sClass) > 2)
+
+    if (g_iKnife[client] > 0)
     {
-        int iWeapon = CSGOItems_GiveWeapon(client, sClass);
+        CSGOItems_GetWeaponClassNameByDefIndex(g_iKnife[client], sClass, sizeof(sClass));
+    }
+
+    delete pack;
+    
+    if(IsClientValid(client))
+    {
+        int iWeapon = -1;
         
-        if (iWeapon > 0)
+        if (strlen(sClass) > 2)
+        {
+            iWeapon = PTaH_GivePlayerItem(client, sClass);
+            if (g_bDebug)  PrintToChat(client, "PTaH_GivePlayerItem sClass: %s", sClass);
+        }
+        else
+        {
+            iWeapon = GivePlayerItem(client, "weapon_knife");
+            if (g_bDebug)  PrintToChat(client, "GivePlayerItem");
+        }
+        
+        if (IsValidWeapon(iWeapon))
         {
             EquipPlayerWeapon(client, iWeapon);
-            
-            if (g_bDebug)
-            {
-                PrintToChat(client, "CSGOItems_GiveWeapon");
-            }
         
-            DataPack pack2 = new DataPack();
-            RequestFrame(Frame_SetActionWeapon, pack2);
-            pack2.WriteCell(GetClientUserId(client));
-            pack2.WriteCell(iWeapon);
+            pack = new DataPack();
+            RequestFrame(Frame_SetActionWeapon, pack);
+            pack.WriteCell(GetClientUserId(client));
+            pack.WriteCell(iWeapon);
         }
     }
 }
 
-public void Frame_SetActionWeapon(any pack)
+public void Frame_SetActionWeapon(DataPack pack)
 {
-    ResetPack(pack);
-    int client = GetClientOfUserId(ReadPackCell(pack));
-    int weapon = ReadPackCell(pack);
-    delete view_as<DataPack>(pack);
+    pack.Reset();
+    int client = GetClientOfUserId(pack.ReadCell());
+    int weapon = pack.ReadCell();
+    delete pack;
     
-    if (IsClientValid(client) && CSGOItems_IsValidWeapon(weapon))
+    if (IsClientValid(client) && IsValidWeapon(weapon))
     {
         CSGOItems_SetActiveWeapon(client, weapon);
     }
 }
 
-stock bool IsClientValid(int client, bool bots = false)
+stock bool IsClientValid(int client)
 {
     if (client > 0 && client <= MaxClients)
     {
-        if(IsClientInGame(client) && (bots || !IsFakeClient(client)) && !IsClientSourceTV(client))
+        if(IsClientInGame(client) && !IsFakeClient(client) && !IsClientSourceTV(client))
         {
             return true;
         }
@@ -889,5 +907,56 @@ bool IsValidWeapon(int weapon)
         return false;
     }
 
+    return true;
+}
+
+bool RemoveKnife(int client)
+{
+    for(int offset = 0; offset < 128; offset += 4)
+    {
+        int weapon = GetEntDataEnt2(client, FindSendPropInfo("CBasePlayer", "m_hMyWeapons") + offset);
+
+        if (IsValidEntity(weapon))
+        {
+            char sClass[32];
+            GetEntityClassname(weapon, sClass, sizeof(sClass));
+
+            if ((StrContains(sClass, "melee", false) != -1) || (StrContains(sClass, "taser", false) != -1) || (StrContains(sClass, "knife", false) != -1) || (StrContains(sClass, "bayonet", false) != -1))
+            {
+                return SafeRemoveWeapon(client, weapon);
+            }
+        }
+    }
+
+    return false;
+}
+
+stock bool SafeRemoveWeapon(int iClient, int iWeapon)
+{
+    if (!IsValidEntity(iWeapon) || !IsValidEdict(iWeapon))
+        return false;
+    
+    if (!HasEntProp(iWeapon, Prop_Send, "m_hOwnerEntity"))
+        return false;
+    
+    int iOwnerEntity = GetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity");
+    
+    if (iOwnerEntity != iClient)
+        SetEntPropEnt(iWeapon, Prop_Send, "m_hOwnerEntity", iClient);
+    
+    CS_DropWeapon(iClient, iWeapon, false);
+    
+    if (HasEntProp(iWeapon, Prop_Send, "m_hWeaponWorldModel"))
+    {
+        int iWorldModel = GetEntPropEnt(iWeapon, Prop_Send, "m_hWeaponWorldModel");
+        
+        if (IsValidEdict(iWorldModel) && IsValidEntity(iWorldModel))
+            if (!AcceptEntityInput(iWorldModel, "Kill"))
+                return false;
+    }
+    
+    if (!AcceptEntityInput(iWeapon, "Kill"))
+        return false;
+    
     return true;
 }
