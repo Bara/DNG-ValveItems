@@ -74,6 +74,7 @@ public void OnPluginStart()
     RegConsoleCmd("sm_rknife", Command_RKnife);
     
     RegAdminCmd("sm_aknife", Command_AKnife, ADMFLAG_ROOT);
+    RegAdminCmd("sm_active", Command_Active, ADMFLAG_ROOT);
     RegAdminCmd("sm_dknife", Command_DKnife, ADMFLAG_ROOT);
     
     AutoExecConfig_SetCreateDirectory(true);
@@ -86,7 +87,7 @@ public void OnPluginStart()
     AutoExecConfig_ExecuteFile();
     AutoExecConfig_CleanFile();
     
-    HookEvent("player_spawn", Event_PlayerSpawn);
+    HookEvent("player_spawn", Event_PlayerSpawn, EventHookMode_PostNoCopy);
     
     LoopClients(i)
     {
@@ -163,6 +164,38 @@ public void OnClientPostAdminCheck(int client)
     if(IsClientValid(client))
     {
         LoadClientKnifes(client);
+    }
+}
+
+public void OnEntityCreated(int entity, const char[] classname)
+{
+    if (IsValidEntity(entity))
+    {
+        char sClass[32];
+        GetEntityClassname(entity, sClass, sizeof(sClass));
+
+        if (StrContains(sClass, "knife", false) != -1 || StrContains(sClass, "bayonet", false) != -1)
+        {
+            RequestFrame(Frame_GetOwner, EntIndexToEntRef(entity));
+        }
+    }
+}
+
+public void Frame_GetOwner(int ref)
+{
+    int entity = EntRefToEntIndex(ref);
+
+    if (IsValidEntity(entity))
+    {
+        char sClass[32];
+        GetEntityClassname(entity, sClass, sizeof(sClass));
+
+        int iOwner = GetEntPropEnt(entity, Prop_Send, "m_hOwnerEntity");
+
+        if (!IsClientValid(iOwner))
+        {
+            AcceptEntityInput(entity, "Kill");
+        }
     }
 }
 
@@ -400,6 +433,23 @@ public Action Command_AKnife(int client, int args)
     }
     
     return Plugin_Continue;
+}
+
+public Action Command_Active(int client, int args)
+{
+    if (!IsClientValid(client))
+    {
+        return Plugin_Handled;
+    }
+
+    int iWeapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+
+    if (IsValidEntity(iWeapon))
+    {
+        ReplyToCommand(client, "Weapon Index: %d", iWeapon);
+    }
+
+    return Plugin_Handled;
 }
 
 public Action Command_Knife(int client, int args)
