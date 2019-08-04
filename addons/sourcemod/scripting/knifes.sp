@@ -87,7 +87,7 @@ public void OnPluginStart()
     AutoExecConfig_ExecuteFile();
     AutoExecConfig_CleanFile();
     
-    HookEvent("player_spawn", Event_PlayerSpawn, EventHookMode_PostNoCopy);
+    HookEvent("player_spawn", Event_PlayerSpawn, EventHookMode_Post);
     
     LoopClients(i)
     {
