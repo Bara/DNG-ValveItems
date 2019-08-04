@@ -8,8 +8,8 @@
 #include <autoexecconfig>
 #include <groupstatus>
 
-#undef REQUIRED_PLUGIN
-#include <n_arms_fix>
+#undef REQUIRE_PLUGIN
+#tryinclude <kstore>
 
 #pragma newdecls required
 
@@ -30,8 +30,6 @@ int g_iLastSkinChange[MAXPLAYERS + 1] = { -1, ...};
 
 ConVar g_cInterval = null;
 
-bool g_bArmsFix = false;
-
 public Plugin myinfo = 
 {
     name = "Gloves",
@@ -46,11 +44,6 @@ public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max
     CreateNative("HasClientGloves", Native_HasGloves);
 
     RegPluginLibrary("gloves");
-
-    MarkNativeAsOptional("ArmsFix_SetDefaults");
-    MarkNativeAsOptional("ArmsFix_HasDefaultArms");
-    MarkNativeAsOptional("ArmsFix_SetDefaultArms");
-    MarkNativeAsOptional("ArmsFix_RefreshView");
 
     return APLRes_Success;
 }
@@ -84,30 +77,9 @@ public void OnPluginStart()
 
     LoadTranslations("gloves.phrases");
     LoadTranslations("groupstatus.phrases");
-}
 
-public void OnAllPluginsLoaded()
-{
-    if (LibraryExists("CSGO_ArmsFix"))
-    {
-        g_bArmsFix = true;
-    }
-}
+    HookEvent("player_spawn", Event_PlayerSpawn, EventHookMode_Post);
 
-public void OnLibraryAdded(const char[] library)
-{
-    if (StrEqual(library, "CSGO_ArmsFix", false))
-    {
-        g_bArmsFix = true;
-    }
-}
-
-public void OnLibraryRemoved(const char[] library)
-{
-    if (StrEqual(library, "CSGO_ArmsFix", false))
-    {
-        g_bArmsFix = false;
-    }
 }
 
 public void OnMapStart()
@@ -267,9 +239,39 @@ public Action Command_Gloves(int client, int args)
     return Plugin_Continue;
 }
 
-public void ArmsFix_OnArmsSafe(int client)
+/* #if defined _Store_INCLUDED
+public bool Store_OnPlayerSkinDefault(int client, int team, char[] skin, int skinLen, char[] arms, int armsLen)
 {
-    UpdatePlayerGlove(client);
+    if (g_iGlove[client] >= 1 && g_iSkin[client] >= 1)
+    {
+        return false;
+    }
+
+    return true;
+}
+#endif */
+
+public Action Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast)
+{
+    int userid = event.GetInt("userid");
+    int client = GetClientOfUserId(userid);
+    
+    if (IsClientValid(client))
+    {
+        CreateTimer(0.1, Timer_SetGlove, userid, TIMER_FLAG_NO_MAPCHANGE);
+    }
+}
+
+public Action Timer_SetGlove(Handle timer, int userid)
+{
+    int client = GetClientOfUserId(userid);
+
+    if (IsClientValid(client))
+    {
+        UpdatePlayerGlove(client);
+    }
+
+    return Plugin_Stop;
 }
 
 void ShowGlovesMenu(int client)
@@ -341,6 +343,12 @@ public int Menu_Gloves(Menu menu, MenuAction action, int client, int param)
 
             char sDisplay[DISPLAY_LENGTH];
             CSGOItems_GetGlovesDisplayNameByDefIndex(g_iGlove[client], sDisplay, sizeof(sDisplay));
+
+            if (strlen(sDisplay) < 2)
+            {
+                Format(sDisplay, sizeof(sDisplay), "No Glove");
+            }
+            
             CPrintToChat(client, "%T", "Glove Choosed", client, PTAG, sDisplay);
 
             g_iGloveSite[client] = menu.Selection;
@@ -371,6 +379,12 @@ public int Menu_Gloves(Menu menu, MenuAction action, int client, int param)
 
 void ShowSkinsMenu(int client)
 {
+    if (g_iGlove[client] == 0)
+    {
+        PrintToChat(client, "This can't be replaced, while you're alive. Wait until next spawn.");
+        return;
+    }
+
     Menu menu = new Menu(Menu_GloveSkin);
 
     char sTitle[DISPLAY_LENGTH];
@@ -495,6 +509,8 @@ public void Frame_OpenMenu(any userid)
 
 void UpdatePlayerGlove(int client)
 {
+    PrintToChat(client, "Glove: %d, Skin: %d", g_iGlove[client], g_iSkin[client]);
+
     if (g_iGlove[client] < 1 || g_iSkin[client] < 1)
     {
         return;
@@ -512,39 +528,35 @@ void UpdatePlayerGlove(int client)
         AcceptEntityInput(ent, "KillHierarchy");
     }
 
-    if (g_bArmsFix)
-    {
-        ArmsFix_SetDefaults(client);
-    }
+    SetEntPropString(client, Prop_Send, "m_szArmsModel", "");
 
     ent = CreateEntityByName("wearable_item");
 
     if(ent != -1)
     {
         SetEntProp(ent, Prop_Send, "m_iItemIDLow", -1);
-
         SetEntProp(ent, Prop_Send, "m_iItemDefinitionIndex", g_iGlove[client]);
         SetEntProp(ent, Prop_Send,  "m_nFallbackPaintKit", g_iSkin[client]);
-        
-        SetEntPropFloat(ent, Prop_Send, "m_flFallbackWear", 0.0001);
+        SetEntPropFloat(ent, Prop_Send, "m_flFallbackWear", 0.0);
         SetEntPropEnt(ent, Prop_Data, "m_hOwnerEntity", client);
         SetEntPropEnt(ent, Prop_Data, "m_hParent", client);
         SetEntPropEnt(ent, Prop_Data, "m_hMoveParent", client); // For WorlModel support
         SetEntProp(ent, Prop_Send, "m_bInitialized", 1);
 
-        DispatchSpawn(ent);
-
-        SetEntPropEnt(client, Prop_Send, "m_hMyWearables", ent);
-        SetEntProp(client, Prop_Send, "m_nBody", 1); // For WorlModel support
+        if (DispatchSpawn(ent))
+        {
+            SetEntPropEnt(client, Prop_Send, "m_hMyWearables", ent);
+            SetEntProp(client, Prop_Send, "m_nBody", 1); // For WorlModel support
+        }
     }
 
-    /* if(iWeapon != -1)
+    if(iWeapon != -1)
     {
         DataPack pack = new DataPack();
         CreateDataTimer(0.1, Timer_SetActiveWeapon, pack);
         pack.WriteCell(client);
         pack.WriteCell(iWeapon);
-    } */
+    }
 }
 
 public Action Timer_SetActiveWeapon(Handle timer, DataPack pack)
@@ -552,6 +564,7 @@ public Action Timer_SetActiveWeapon(Handle timer, DataPack pack)
     ResetPack(pack);
     int client = pack.ReadCell();
     int iWeapon = pack.ReadCell();
+    delete pack;
 
     if(IsClientValid(client))
     {
@@ -559,11 +572,7 @@ public Action Timer_SetActiveWeapon(Handle timer, DataPack pack)
         {
             CSGOItems_SetActiveWeapon(client, iWeapon);
         }
-
-        // RefreshVM(client);
     }
-
-
 }
 
 stock bool IsClientValid(int client, bool bots = false)
@@ -574,24 +583,6 @@ stock bool IsClientValid(int client, bool bots = false)
         {
             return true;
         }
-    }
-    
-    return false;
-}
-
-stock bool RefreshVM(int iClient)
-{
-    if (!IsPlayerAlive(iClient)) {
-        return false;
-    }
-    
-    Event evEvent = CreateEvent("player_spawn", true);
-    
-    if (evEvent != null) {
-        evEvent.SetInt("userid", GetClientUserId(iClient));
-        evEvent.FireToClient(iClient);
-        evEvent.Cancel();
-        return true;
     }
     
     return false;
