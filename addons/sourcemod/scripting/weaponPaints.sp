@@ -9,6 +9,7 @@
 #include <autoexecconfig>
 #include <knifes>
 #include <groupstatus>
+#include <PTaH>
 
 #pragma newdecls required
 
@@ -133,11 +134,13 @@ public void OnPluginStart()
 
     LoadTranslations("weaponpaints.phrases");
     LoadTranslations("groupstatus.phrases");
+
+    PTaH(PTaH_GiveNamedItemPost, Hook, GiveNamedItemPost);
 }
 
 public void OnClientPutInServer(int client)
 {
-    SDKHook(client, SDKHook_WeaponEquipPost, OnWeaponEquipPost);
+    // SDKHook(client, SDKHook_WeaponEquipPost, OnWeaponEquipPost);
 
     if(IsClientValid(client))
     {
@@ -197,9 +200,17 @@ public void OnClientDisconnect(int client)
     }
 }
 
-public void OnWeaponEquipPost(int client, int weapon)
+/* public void OnWeaponEquipPost(int client, int weapon)
 {
     SetPaints(client, weapon);
+} */
+
+void GiveNamedItemPost(int client, const char[] classname, const CEconItemView item, int entity, bool OriginIsNULL, const float Origin[3])
+{
+    if (IsClientValid(client) && IsValidEntity(entity))
+    {
+        SetPaints(client, entity);
+    }
 }
 
 public void OnMapStart()
