@@ -258,7 +258,7 @@ public Action Event_PlayerSpawn(Event event, const char[] name, bool dontBroadca
     
     if (IsClientValid(client))
     {
-        CreateTimer(0.1, Timer_SetGlove, userid, TIMER_FLAG_NO_MAPCHANGE);
+        CreateTimer(0.5, Timer_SetGlove, userid, TIMER_FLAG_NO_MAPCHANGE);
     }
 }
 
@@ -347,6 +347,11 @@ public int Menu_Gloves(Menu menu, MenuAction action, int client, int param)
             if (strlen(sDisplay) < 2)
             {
                 Format(sDisplay, sizeof(sDisplay), "No Glove");
+
+                g_iGlove[client] = 0;
+                g_iSkin[client] = 0;
+
+                UpdateClientSQL(client);
             }
             
             CPrintToChat(client, "%T", "Glove Choosed", client, PTAG, sDisplay);
@@ -509,9 +514,7 @@ public void Frame_OpenMenu(any userid)
 
 void UpdatePlayerGlove(int client)
 {
-    PrintToChat(client, "Glove: %d, Skin: %d", g_iGlove[client], g_iSkin[client]);
-
-    if (g_iGlove[client] < 1 || g_iSkin[client] < 1)
+    if (g_iGlove[client] < 1)
     {
         return;
     }
@@ -540,13 +543,13 @@ void UpdatePlayerGlove(int client)
         SetEntPropFloat(ent, Prop_Send, "m_flFallbackWear", 0.0);
         SetEntPropEnt(ent, Prop_Data, "m_hOwnerEntity", client);
         SetEntPropEnt(ent, Prop_Data, "m_hParent", client);
-        SetEntPropEnt(ent, Prop_Data, "m_hMoveParent", client); // For WorlModel support
+        // SetEntPropEnt(ent, Prop_Data, "m_hMoveParent", client); // For WorlModel support
         SetEntProp(ent, Prop_Send, "m_bInitialized", 1);
 
         if (DispatchSpawn(ent))
         {
             SetEntPropEnt(client, Prop_Send, "m_hMyWearables", ent);
-            SetEntProp(client, Prop_Send, "m_nBody", 1); // For WorlModel support
+            // SetEntProp(client, Prop_Send, "m_nBody", 1); // For WorlModel support
         }
     }
 
@@ -561,10 +564,9 @@ void UpdatePlayerGlove(int client)
 
 public Action Timer_SetActiveWeapon(Handle timer, DataPack pack)
 {
-    ResetPack(pack);
+    pack.Reset();
     int client = pack.ReadCell();
     int iWeapon = pack.ReadCell();
-    delete pack;
 
     if(IsClientValid(client))
     {
