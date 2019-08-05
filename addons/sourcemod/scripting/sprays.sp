@@ -23,18 +23,18 @@
 #define MAX_SPRAYS 1024
 #define SPRAY_PATH_LENGTH PLATFORM_MAX_PATH * 2
 
-enum sprayList
+enum struct Spray
 {
-    String:sSpray[32],
-    iPrecacheID,
-    String:sCategory[32],
-    String:_sFlag[32],
-    bool:bValve
+    char Spray[32];
+    int PrecacheID;
+    char Category[32];
+    char Flag[32];
+    bool Valve;
 }
 
 int g_iLastSprayed[MAXPLAYERS + 1];
 int g_iSpray[MAXPLAYERS + 1] =  { 0, ... };
-int g_iSprays[MAX_SPRAYS][sprayList];
+Spray g_spSprays[MAX_SPRAYS];
 int g_iCount = 1;
 int g_iSprayContest = -1;
 
@@ -150,7 +150,7 @@ void AddValveSprays()
             bool bFound = false;
             for (int j = 1; j < g_iCount; j++)
             {
-                if (StrEqual(g_iSprays[j][sSpray], sDisplay, false))
+                if (StrEqual(g_spSprays[j].Spray, sDisplay, false))
                 {
                     bFound = true;
                     break;
@@ -168,14 +168,14 @@ void AddValveSprays()
             ReplaceString(sPrecache, sizeof(sPrecache), ".vmt", "");
             int iPrecache = PrecacheDecal(sPrecache, true);
             
-            strcopy(g_iSprays[g_iCount][sSpray], sizeof(sDisplay), sDisplay);
-            g_iSprays[g_iCount][iPrecacheID] = iPrecache;
-            g_iSprays[g_iCount][bValve] = true;
-            Format(g_iSprays[g_iCount][sCategory], CATSIZE, "Valve");
+            strcopy(g_spSprays[g_iCount].Spray, sizeof(sDisplay), sDisplay);
+            g_spSprays[g_iCount].PrecacheID = iPrecache;
+            g_spSprays[g_iCount].Valve = true;
+            Format(g_spSprays[g_iCount].Category, CATSIZE, "Valve");
             
             if (g_bDebug)
             {
-                LogToFile(g_sFileAdd, "[SPRAY] Name: %s, Category: %s, ID: %d, Decal: %s, PrecacheID: %d, isValve: %d", g_iSprays[g_iCount][sSpray], g_iSprays[g_iCount][sCategory], g_iCount, sPrecache, g_iSprays[g_iCount][iPrecacheID], g_iSprays[g_iCount][bValve]);
+                LogToFile(g_sFileAdd, "[SPRAY] Name: %s, Category: %s, ID: %d, Decal: %s, PrecacheID: %d, isValve: %d", g_spSprays[g_iCount].Spray, g_spSprays[g_iCount].Category, g_iCount, sPrecache, g_spSprays[g_iCount].PrecacheID, g_spSprays[g_iCount].Valve);
             }
             
             g_iCount++;
@@ -372,18 +372,18 @@ void ListSprays(int client, const char[] category)
         char sItem[6];
         IntToString(i, sItem, sizeof(sItem));
 
-        if (!StrEqual(g_iSprays[i][sCategory], category, false))
+        if (!StrEqual(g_spSprays[i].Category, category, false))
         {
             continue;
         }
         
-        if (!g_iSprays[i][bValve])
+        if (!g_spSprays[i].Valve)
         {
-            menu.AddItem(sItem, g_iSprays[i][sSpray]);
+            menu.AddItem(sItem, g_spSprays[i].Spray);
         }
-        else if (g_iSprays[i][bValve] && (g_cValveFlag.BoolValue))
+        else if (g_spSprays[i].Valve && (g_cValveFlag.BoolValue))
         {
-            menu.AddItem(sItem, g_iSprays[i][sSpray]);
+            menu.AddItem(sItem, g_spSprays[i].Spray);
         }
     }
     
@@ -399,7 +399,7 @@ public Action Command_MySpray(int client, int args)
         return Plugin_Handled;
     }
     
-    if (g_iSprays[g_iSpray[client]][bValve] && !(g_cValveFlag.BoolValue))
+    if (g_spSprays[g_iSpray[client]].Valve && !(g_cValveFlag.BoolValue))
     {
         CPrintToChat(client, "%s Dein Spray ist ungültig!", PTAG);
         g_iSpray[client] = 0;
@@ -410,7 +410,7 @@ public Action Command_MySpray(int client, int args)
     
     if (g_iSpray[client] != 0)
     {
-        CPrintToChat(client, "%s Dein Spray ist: {green}%s", PTAG, g_iSprays[g_iSpray[client]][sSpray]);
+        CPrintToChat(client, "%s Dein Spray ist: {green}%s", PTAG, g_spSprays[g_iSpray[client]].Spray);
     }
     else
     {
@@ -449,7 +449,7 @@ public int Menu_ChangeSpray(Handle menu, MenuAction action, int client, int para
         
         if (g_iSpray[client] != 0)
         {
-            CPrintToChat(client, "%s Du hast %s als Spray ausgewählt.", PTAG, g_iSprays[g_iSpray[client]][sSpray]);
+            CPrintToChat(client, "%s Du hast %s als Spray ausgewählt.", PTAG, g_spSprays[g_iSpray[client]].Spray);
         }
         else
         {
@@ -654,7 +654,7 @@ void AddSpray(const char[] name, const char[] category, const char values[12][12
     bool bFound = false;
     for (int j = 1; j < g_iCount; j++)
     {
-        if (StrEqual(g_iSprays[j][sSpray], name, false))
+        if (StrEqual(g_spSprays[j].Spray, name, false))
         {
             bFound = true;
             break;
@@ -683,7 +683,7 @@ void AddSpray(const char[] name, const char[] category, const char values[12][12
         AddFileToDownloadsTable(sFile);
         AddFileToDownloadsTable(sFileVTF);
         
-        strcopy(g_iSprays[g_iCount][sSpray], (SPRAY_PATH_LENGTH), name);
+        strcopy(g_spSprays[g_iCount].Spray, (SPRAY_PATH_LENGTH), name);
         
         int iPrecache = PrecacheDecal(values[0][1], true);
 
@@ -692,19 +692,19 @@ void AddSpray(const char[] name, const char[] category, const char values[12][12
             g_iSprayContest = iPrecache;
         }
 
-        g_iSprays[g_iCount][iPrecacheID] = iPrecache;
-        strcopy(g_iSprays[g_iCount][sCategory], CATSIZE, category);
+        g_spSprays[g_iCount].PrecacheID = iPrecache;
+        strcopy(g_spSprays[g_iCount].Category, CATSIZE, category);
 
         if (strlen(values[1][1]) > 0)
         {
-            strcopy(g_iSprays[g_iCount][_sFlag], CATSIZE, values[1][1]);
+            strcopy(g_spSprays[g_iCount].Flag, CATSIZE, values[1][1]);
         }
 
-        g_iSprays[g_iCount][bValve] = false;
+        g_spSprays[g_iCount].Valve = false;
         
         if (g_bDebug)
         {
-            LogToFile(g_sFileAdd, "[SPRAY] Name: %s, Category: %s, ID: %d, Decal: %s, PrecacheID: %d, isValve: %d, Flag: %s", g_iSprays[g_iCount][sSpray], g_iSprays[g_iCount][sCategory], g_iCount, values[0][1], g_iSprays[g_iCount][iPrecacheID], g_iSprays[g_iCount][bValve], g_iSprays[g_iCount][_sFlag]);
+            LogToFile(g_sFileAdd, "[SPRAY] Name: %s, Category: %s, ID: %d, Decal: %s, PrecacheID: %d, isValve: %d, Flag: %s", g_spSprays[g_iCount].Spray, g_spSprays[g_iCount].Category, g_iCount, values[0][1], g_spSprays[g_iCount].PrecacheID, g_spSprays[g_iCount].Valve, g_spSprays[g_iCount].Flag);
         }
         
         g_iCount++;
@@ -777,9 +777,9 @@ bool ClientSpray(int client)
     if(g_iSpray[client] == 0)
     {
         int rand = GetRandomInt(1, g_iCount - 1);
-        int spray = g_iSprays[rand][iPrecacheID];
+        int spray = g_spSprays[rand].PrecacheID;
         
-        if (g_iSprays[rand][bValve] && !(g_cValveFlag.BoolValue))
+        if (g_spSprays[rand].Valve && !(g_cValveFlag.BoolValue))
         {
             g_iSpray[client] = 0;
             SetClientCookie(client, g_hCookie, "0");
@@ -797,7 +797,7 @@ bool ClientSpray(int client)
     }
     else
     {
-        if(g_iSprays[g_iSpray[client]][iPrecacheID] == 0)
+        if(g_spSprays[g_iSpray[client]].PrecacheID == 0)
         {
             CPrintToChat(client, "%s Ihr Spray funktioniert leider nicht. Wählen Sie ein neues mit '!sprays'.", PTAG);
             g_iSpray[client] = 0;
@@ -806,7 +806,7 @@ bool ClientSpray(int client)
             return;
         }
         
-        if (g_iSprays[g_iSpray[client]][bValve] && !(g_cValveFlag.BoolValue))
+        if (g_spSprays[g_iSpray[client]].Valve && !(g_cValveFlag.BoolValue))
         {
             CPrintToChat(client, "%s Sie haben ein ungültiges Spray!", PTAG);
             g_iSpray[client] = 0;
@@ -815,11 +815,11 @@ bool ClientSpray(int client)
             return;
         }
         
-        TE_SetupBSPDecal(fClientEyeViewPoint, g_iSprays[g_iSpray[client]][iPrecacheID]);
+        TE_SetupBSPDecal(fClientEyeViewPoint, g_spSprays[g_iSpray[client]].PrecacheID);
 
         if (g_bDebug)
         {
-            void code = LogToFile(g_sFile, "[SPRAY] Player: %N, ID: %d, PrecacheID: %d", client, g_iSpray[client], g_iSprays[g_iSpray[client]][iPrecacheID]);
+            void code = LogToFile(g_sFile, "[SPRAY] Player: %N, ID: %d, PrecacheID: %d", client, g_iSpray[client], g_spSprays[g_iSpray[client]].PrecacheID);
             PrintToServer("[Spray] %d", code);
         }
     }
