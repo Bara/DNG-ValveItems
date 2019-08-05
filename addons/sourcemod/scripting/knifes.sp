@@ -97,6 +97,9 @@ public void OnPluginStart()
     connectSQL();
 
     LoadIgnoreIDs();
+
+    PTaH(PTaH_GiveNamedItemPre, Hook, GiveNamedItemPre);
+    PTaH(PTaH_GiveNamedItemPost, Hook, GiveNamedItemPost);
 }
 
 public void OnMapStart()
@@ -155,8 +158,6 @@ public void OnClientPutInServer(int client)
     // SDKHook(client, SDKHook_WeaponEquipPost, OnWeaponEquipPost);
     SDKHook(client, SDKHook_WeaponSwitchPost, OnWeaponSwitchPost);
     SDKHook(client, SDKHook_PreThink, OnPreThink);
-
-    PTaH(PTaH_GiveNamedItemPre, Hook, GiveNamedItemPre);
 }
 
 public void OnClientPostAdminCheck(int client)
@@ -323,7 +324,7 @@ public void OnWeaponEquipPost(int client, int weapon)
     }
 }
 
-public Action GiveNamedItemPre(int client, char classname[64], CEconItemView &item, bool &ignoredCEconItemView, bool &OriginIsNULL, float Origin[3])
+Action GiveNamedItemPre(int client, char classname[64], CEconItemView &item, bool &ignoredCEconItemView, bool &OriginIsNULL, float Origin[3])
 {
     if (IsClientValid(client))
     {
@@ -342,6 +343,25 @@ public Action GiveNamedItemPre(int client, char classname[64], CEconItemView &it
         }
     }
     return Plugin_Continue;
+}
+
+void GiveNamedItemPost(int client, const char[] classname, const CEconItemView item, int entity, bool OriginIsNULL, const float Origin[3])
+{
+    if (IsClientValid(client) && IsValidEntity(entity))
+    {
+        if (g_iKnife[client] < 1)
+        {
+            return;
+        }
+
+        int iDef = CSGOItems_GetWeaponDefIndexByClassName(classname);
+
+        if (CSGOItems_IsDefIndexKnife(iDef))
+        {
+            SetEntProp(entity, Prop_Send, "m_iItemDefinitionIndex", iDef);
+            EquipPlayerWeapon(client, entity);
+        }
+    }
 }
 
 public Action Command_DKnife(int client, int args)
