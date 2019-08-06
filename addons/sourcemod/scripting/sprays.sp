@@ -19,7 +19,7 @@
 #define PTAG "{darkblue}[DNG]{default}"
 
 #define CATSIZE 32
-#define SOUND_SPRAY "music/player/sprayer.mp3"
+#define SOUND_SPRAY "dng/spray.mp3"
 #define MAX_SPRAYS 1024
 #define SPRAY_PATH_LENGTH PLATFORM_MAX_PATH * 2
 
@@ -42,10 +42,10 @@ bool g_bDebug = false;
 
 ConVar g_cDistance = null;
 ConVar g_cTime = null;
-ConVar g_cVIPTime = null;
+/// ConVar g_cVIPTime = null;
 ConVar g_cUse = null;
 ConVar g_cFlag = null;
-ConVar g_cValveFlag = null;
+// ConVar g_cValveFlag = null;
 ConVar g_cEnableValve = null;
 ConVar g_cEnableCustom = null;
 
@@ -89,17 +89,18 @@ public void OnPluginStart()
     RegConsoleCmd("sm_myspray", Command_MySpray);
     RegConsoleCmd("sm_spray", Command_Spray);
     
+    HookEvent("round_start", Event_RoundStart);
     HookEvent("player_spawn", Event_PlayerSpawn);
 
     AutoExecConfig_SetCreateDirectory(true);
     AutoExecConfig_SetCreateFile(true);
     AutoExecConfig_SetFile("plugin.sprays");
     g_cTime = AutoExecConfig_CreateConVar("sprays_time", "30", "Time to spray a new spray");
-    g_cVIPTime = AutoExecConfig_CreateConVar("sprays_vip_time", "15", "Time to spray a new spray as vip");
+    // g_cVIPTime = AutoExecConfig_CreateConVar("sprays_vip_time", "15", "Time to spray a new spray as vip");
     g_cDistance = AutoExecConfig_CreateConVar("sprays_distance", "115", "Max. distance from player");
     g_cUse = AutoExecConfig_CreateConVar("sprays_use", "1", "Spray with '+use'? If 0 use you can use !spray", _, true, 0.0, true, 1.0);
     g_cFlag = AutoExecConfig_CreateConVar("sprays_flag", "", "Default flag for sprays");
-    g_cValveFlag = AutoExecConfig_CreateConVar("sprays_valve_flag", "1", "Use VIP Flag to get access to valve sprays?", _, true, 0.0, true, 1.0);
+    // g_cValveFlag = AutoExecConfig_CreateConVar("sprays_valve_flag", "1", "Use VIP Flag to get access to valve sprays?", _, true, 0.0, true, 1.0);
     g_cEnableValve = AutoExecConfig_CreateConVar("sprays_enable_valve", "1", "Enable valve sprays?", _, true, 0.0, true, 1.0);
     g_cEnableCustom = AutoExecConfig_CreateConVar("sprays_enable_custom", "1", "Enable custom sprays?", _, true, 0.0, true, 1.0);
     AutoExecConfig_ExecuteFile();
@@ -132,6 +133,8 @@ void AddValveSprays()
     {
         return;
     }
+
+    if (g_bDebug) PrintToChatAll("Spray Count: %d, g_aCategories: %d", CSGOItems_GetSprayCount(), g_aCategories);
     
     int count = 0;
     for (int i = 0; i <= CSGOItems_GetSprayCount(); i++)
@@ -144,6 +147,8 @@ void AddValveSprays()
         
         char sVTF[SPRAY_PATH_LENGTH];
         CSGOItems_GetSprayVTFBySprayNum(i, sVTF, sizeof(sVTF));
+
+        if (g_bDebug) PrintToChatAll("Display: %s, VMT: %s, VTF: %s", sDisplay, sVMT, sVTF);
         
         if (strlen(sVMT) > 4)
         {
@@ -166,6 +171,7 @@ void AddValveSprays()
             strcopy(sPrecache, sizeof(sPrecache), sVMT);
             ReplaceString(sPrecache, sizeof(sPrecache), "materials/", "");
             ReplaceString(sPrecache, sizeof(sPrecache), ".vmt", "");
+            if (g_bDebug) PrintToChatAll("Display: %s, VMT: %s, VTF: %s", sDisplay, sPrecache, sVTF);
             int iPrecache = PrecacheDecal(sPrecache, true);
             
             strcopy(g_spSprays[g_iCount].Spray, sizeof(sDisplay), sDisplay);
@@ -182,6 +188,8 @@ void AddValveSprays()
             count++;
         }
     }
+
+    if (g_bDebug) PrintToChatAll("g_iCount: %d, count: %d", g_iCount, count);
 
     if (count > 0)
     {
@@ -204,11 +212,13 @@ public void OnPluginEnd()
 
 public void OnMapStart()
 {
-    PrecacheSound(SOUND_SPRAY, true);
+    PrecacheSoundAny(SOUND_SPRAY);
     
     char sBuffer[256];
     Format(sBuffer, sizeof(sBuffer), "sound/%s", SOUND_SPRAY);
     AddFileToDownloadsTable(sBuffer);
+
+    AddValveSprays();
 
     PrepareSpraysConfig();
 }
@@ -274,6 +284,11 @@ public void OnClientDisconnect(int client)
         Format(sBuffer, sizeof(sBuffer), "%i", g_iSpray[client]);
         SetClientCookie(client, g_hCookie, sBuffer);
     }
+}
+
+public Action Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
+{
+    ServerCommand("sm plugins reload sprays");
 }
 
 public Action Event_PlayerSpawn(Event event, const char[] name, bool dontBroadcast) 
@@ -381,7 +396,7 @@ void ListSprays(int client, const char[] category)
         {
             menu.AddItem(sItem, g_spSprays[i].Spray);
         }
-        else if (g_spSprays[i].Valve && (g_cValveFlag.BoolValue))
+        else if (g_spSprays[i].Valve /*&& (!g_cValveFlag.BoolValue || )*/)
         {
             menu.AddItem(sItem, g_spSprays[i].Spray);
         }
@@ -399,14 +414,14 @@ public Action Command_MySpray(int client, int args)
         return Plugin_Handled;
     }
     
-    if (g_spSprays[g_iSpray[client]].Valve && !(g_cValveFlag.BoolValue))
+    /*if (g_spSprays[g_iSpray[client]].Valve && !(g_cValveFlag.BoolValue))
     {
         CPrintToChat(client, "%s Dein Spray ist ungültig!", PTAG);
         g_iSpray[client] = 0;
         SetClientCookie(client, g_hCookie, "0");
         
         return Plugin_Handled;
-    }
+    }*/
     
     if (g_iSpray[client] != 0)
     {
@@ -578,8 +593,11 @@ void GetSprays(KeyValues kv, int level = 0, const char[] category = "", const ch
         {
             if (level == 0)
             {
-                g_aCategories.PushString(sSection);
-                GetSprays(kv, level + 1, sSection);
+                if (g_aCategories.FindString(sSection) == -1)
+                {
+                    g_aCategories.PushString(sSection);
+                    GetSprays(kv, level + 1, sSection);
+                }
             }
             else if (level == 1)
             {
@@ -739,10 +757,10 @@ bool ClientSpray(int client)
     
     int iDelay = g_cTime.IntValue;
     
-    if (g_cValveFlag.BoolValue)
+    /* if (g_cValveFlag.BoolValue)
     {
         iDelay = g_cVIPTime.IntValue;
-    }
+    } */
     
     if(iRemain < iDelay || g_iLastSprayed[client] == -1)
     {
@@ -779,13 +797,13 @@ bool ClientSpray(int client)
         int rand = GetRandomInt(1, g_iCount - 1);
         int spray = g_spSprays[rand].PrecacheID;
         
-        if (g_spSprays[rand].Valve && !(g_cValveFlag.BoolValue))
+        /*if (g_spSprays[rand].Valve && !(g_cValveFlag.BoolValue))
         {
             g_iSpray[client] = 0;
             SetClientCookie(client, g_hCookie, "0");
             
             return;
-        }
+        }*/
         
         TE_SetupBSPDecal(fClientEyeViewPoint, spray);
 
@@ -806,14 +824,14 @@ bool ClientSpray(int client)
             return;
         }
         
-        if (g_spSprays[g_iSpray[client]].Valve && !(g_cValveFlag.BoolValue))
+        /*if (g_spSprays[g_iSpray[client]].Valve && !(g_cValveFlag.BoolValue))
         {
             CPrintToChat(client, "%s Sie haben ein ungültiges Spray!", PTAG);
             g_iSpray[client] = 0;
             SetClientCookie(client, g_hCookie, "0");
             
             return;
-        }
+        }*/
         
         TE_SetupBSPDecal(fClientEyeViewPoint, g_spSprays[g_iSpray[client]].PrecacheID);
 

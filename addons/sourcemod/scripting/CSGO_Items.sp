@@ -1409,16 +1409,16 @@ stock bool CreateSprayVMT(int iSprayNum, const char[] szDirectory, const char[] 
 			continue;
 		}
 		
-		CreateDirectory(szPath, 777);
+		CreateDirectory(szPath, FPERM_U_READ|FPERM_U_WRITE|FPERM_U_EXEC|FPERM_G_READ|FPERM_G_EXEC|FPERM_O_READ|FPERM_O_EXEC);
 	}
-	
+
 	if (!FileExists(szFullFile)) {
-		File fFile = OpenFile(szFullFile, "w+");
-		
+		File fFile = OpenFile(szFullFile, "w");
+
 		if (fFile == null) {
 			return false;
 		}
-		
+
 		FormatEx(szTexturePathFormat, 128, "\"$basetexture\"	\"%s\"", szTexturePath);
 		ReplaceString(szTexturePathFormat, 128, ".vtf", "", false);
 		
@@ -1430,7 +1430,7 @@ stock bool CreateSprayVMT(int iSprayNum, const char[] szDirectory, const char[] 
 		fFile.WriteLine("	\"$mappingwidth\" \"48\"");
 		fFile.WriteLine("	\"$mappingheight\" \"48\"");
 		fFile.WriteLine("}");
-		
+
 		/*
 		FormatEx(szOutFile, PLATFORM_MAX_PATH, "%s.bz2", szFullFile);
 		
@@ -1442,7 +1442,7 @@ stock bool CreateSprayVMT(int iSprayNum, const char[] szDirectory, const char[] 
 		*/
 		delete fFile;
 	}
-	
+
 	FormatEx(g_szSprayInfo[iSprayNum][VMTPATH], PLATFORM_MAX_PATH, szFullFile);
 	
 	return true;
