@@ -63,8 +63,8 @@
 
 	"Menu All skins on"
 	{
-		"en"			"[X] Show all skins"
-		"de"			"[X] Alle Skins anzeigen"
+		"en"			"All skins: On"
+		"de"			"Alle Skins: Off"
 	}
 
 	"All skins on"
@@ -81,8 +81,8 @@
 
 	"Menu All skins off"
 	{
-		"en"			"[ ] Show all skins"
-		"de"			"[ ] Alle Skins anzeigen"
+		"en"			"All skins: Off"
+		"de"			"Alle Skins: Aus"
 	}
 
 	"Menu Change nametag"

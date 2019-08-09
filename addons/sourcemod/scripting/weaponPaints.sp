@@ -313,7 +313,7 @@ public Action Command_WS(int client, int args)
         menu.AddItem("nametag", sBuffer);
     } */
     
-    if (g_bAllSkins[client])
+    if (!g_bAllSkins[client])
     {
         Format(sBuffer, sizeof(sBuffer), "%T", "Menu All skins off", client);
         menu.AddItem("changeAllSkins", sBuffer);
