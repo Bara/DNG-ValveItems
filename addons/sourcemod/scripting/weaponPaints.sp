@@ -68,6 +68,8 @@ bool g_bAllSkins[MAXPLAYERS + 1] = { false, ... };
 
 ConVar g_cInterval = null;
 
+int g_iNametag = -1;
+
 #include "weaponPaints/sql.sp"
 #include "weaponPaints/setSkin.sp"
 #include "weaponPaints/current.sp"
@@ -134,6 +136,18 @@ public void OnPluginStart()
     LoadTranslations("groupstatus.phrases");
 
     PTaH(PTaH_GiveNamedItemPost, Hook, GiveNamedItemPost);
+
+    CreateTimer(5.0, Timer_SetValve);
+
+    g_iNametag = FindSendPropInfo("CBaseAttributableItem", "m_szCustomName");
+}
+
+public Action Timer_SetValve(Handle timer)
+{
+    GameRules_SetProp("m_bIsValveDS", 1);
+    GameRules_SetProp("m_bIsQuestEligible", 1);
+    
+    return Plugin_Stop;
 }
 
 public void OnClientPutInServer(int client)

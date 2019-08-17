@@ -57,7 +57,11 @@ void SetClientSkin(int client, int iWeapon = -1, int skinIndex, int defIndex, in
         int iAmmo = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryReserveAmmoCount");
         fWear = GetEntPropFloat(iWeapon, Prop_Send, "m_flFallbackWear");
         iSeed = GetEntProp(iWeapon, Prop_Send, "m_nFallbackSeed");
-        // GetEntDataString(iWeapon, FindSendPropInfo("CBaseAttributableItem", "m_szCustomName"), sNametag, sizeof(sNametag));
+        
+        if (g_iNametag > 0)
+        {
+            GetEntDataString(iWeapon, g_iNametag, sNametag, sizeof(sNametag));
+        }
         
         bool bSuccess = CSGOItems_RemoveWeapon(client, iWeapon);
         if (g_bDebug)
@@ -220,11 +224,13 @@ void SetPaints(int client, int weapon)
                     SetEntPropFloat(weapon, Prop_Send, "m_flFallbackWear", pCache.Wear);
                     SetEntProp(weapon, Prop_Send, "m_nFallbackSeed", pCache.Seed);
                     SetEntProp(weapon, Prop_Send, "m_iEntityQuality", pCache.Quality);
+                    // m_nFallbackStatTrak for stattrak kills
+                    // m_nFallbackSeed for pattern/seed
                     
-                    /* if(strlen(pCache.Nametag) > 2 && !StrEqual(pCache.Nametag, "delete", false))
+                    if(g_iNametag > 0 && strlen(pCache.Nametag) > 2 && !StrEqual(pCache.Nametag, "delete", false))
                     {
-                        SetEntDataString(weapon, FindSendPropInfo("CBaseAttributableItem", "m_szCustomName"), pCache.Nametag, 128);
-                    } */
+                        SetEntDataString(weapon, g_iNametag,  pCache.Nametag, sizeof(Player::Nametag));
+                    }
                     
                     if (g_bDebug)
                     {
