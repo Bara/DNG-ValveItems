@@ -22,7 +22,7 @@ void CreateTable()
         `communityid` varchar(32) COLLATE utf8mb4_unicode_ci NOT NULL, \
         `classname` varchar(64) COLLATE utf8mb4_unicode_ci NOT NULL, \
         `defindex` int(11) NOT NULL DEFAULT '0', \
-        `wear` FLOAT NOT NULL DEFAULT '%.4f', \
+        `wear` FLOAT NOT NULL DEFAULT '%f', \
         `seed` int(11) NOT NULL DEFAULT '%d', \
         `quality` int(11) NOT NULL DEFAULT '%d', \
         `nametag` varchar(128) COLLATE utf8mb4_unicode_ci NOT NULL, \
@@ -106,21 +106,21 @@ public void SQL_LoadClientPaints(Database db, DBResultSet results, const char[] 
                     
                     if (strlen(sClass) > 7)
                     {
-                        int iCache[paintsCache];
+                        Player pCache;
                         
-                        strcopy(iCache[pC_sCommunityID], WP_COMMUNITYID, sCommunityID);
-                        strcopy(iCache[pC_sClassName], WP_CLASSNAME, sClass);
-                        iCache[pC_iDefIndex] = iDefIndex;
-                        iCache[pC_fWear] = fWear;
-                        iCache[pC_iSeed] = iSeed;
-                        iCache[pC_iQuality] = iQuality;
-                        strcopy(iCache[pC_sNametag], 128, sNametag);
+                        strcopy(pCache.CommunityID, WP_COMMUNITYID, sCommunityID);
+                        strcopy(pCache.ClassName, WP_CLASSNAME, sClass);
+                        pCache.DefIndex = iDefIndex;
+                        pCache.Wear = fWear;
+                        pCache.Seed = iSeed;
+                        pCache.Quality = iQuality;
+                        strcopy(pCache.Nametag, 128, sNametag);
                         
-                        g_aCache.PushArray(iCache[0]);
+                        g_aCache.PushArray(pCache);
                         
                         if (g_bDebug)
                         {
-                            LogMessage("[SQL_LoadClientPaints] Player: \"%L\" - CommunityID: %s - Classname: %s - DefIndex: %d - Wear: %.4f - Seed: %d - Quality: %d - Nametag: %s", client, iCache[pC_sCommunityID], iCache[pC_sClassName], iCache[pC_iDefIndex], iCache[pC_fWear], iCache[pC_iSeed], iCache[pC_iQuality], iCache[pC_sNametag]);
+                            LogMessage("[SQL_LoadClientPaints] Player: \"%L\" - CommunityID: %s - Classname: %s - DefIndex: %d - Wear: %f - Seed: %d - Quality: %d - Nametag: %s", client, pCache.CommunityID, pCache.ClassName, pCache.DefIndex, pCache.Wear, pCache.Seed, pCache.Quality, pCache.Nametag);
                         }
                     }
                 }

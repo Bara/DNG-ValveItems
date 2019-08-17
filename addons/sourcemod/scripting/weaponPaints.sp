@@ -17,35 +17,34 @@
 #define WP_CLASSNAME 32
 #define WP_DISPLAY 128
 
-#define DEFAULT_WEAR 0.0001
+#define DEFAULT_WEAR 0.00001
 #define DEFAULT_SEED 0
 #define DEFAULT_QUALITY 3
 #define DEFAULT_FLAG ""
 
 #define OUTBREAK "{darkblue}[DNG]{default}"
 
-enum skinsList {
-    siDef,
-    String:ssDef[6],
-    String:ssName[WP_DISPLAY]
-};
-
-enum weaponsList {
-    wiDef,
-    String:wsDef[6],
-    String:wsName[WP_DISPLAY]
+enum struct Skins {
+    int IntDef;
+    char StringDef[6];
+    char Name[WP_DISPLAY];
 }
 
-enum paintsCache
-{
-    String:pC_sCommunityID[32],
-    String:pC_sClassName[32],
-    pC_iDefIndex,
-    Float:pC_fWear,
-    pC_iSeed,
-    pC_iQuality,
-    String:pC_sNametag[128]
-};
+enum struct Weapons {
+    int IntDef;
+    char StringDef[6];
+    char Name[WP_DISPLAY];
+}
+
+enum struct Player {
+    char CommunityID[32];
+    char ClassName[32];
+    char Nametag[128];
+    float Wear;
+    int DefIndex;
+    int Seed;
+    int Quality;
+}
 
 bool g_bDebug = false;
 bool g_bChangeC4 = false;
@@ -59,7 +58,6 @@ int g_iClip1 = -1;
 
 // int g_iWeaponPSite[MAXPLAYERS + 1] =  { 0, ... };
 
-int g_iCache[paintsCache];
 ArrayList g_aCache = null;
 ArrayList g_aSkins = null;
 ArrayList g_aWeapons = null;
@@ -102,7 +100,7 @@ public void OnPluginStart()
     if (g_aCache != null)
         g_aCache.Clear();
     
-    g_aCache = new ArrayList(sizeof(g_iCache));
+    g_aCache = new ArrayList(sizeof(Player));
 
     g_hAllSkins = RegClientCookie("ws_allskins", "Show all skins", CookieAccess_Private);
     SetCookiePrefabMenu(g_hAllSkins, CookieMenu_OnOff_Int, "Show all skins", Cookie_Request);
@@ -189,10 +187,10 @@ public void OnClientDisconnect(int client)
         
         for (int i = 0; i < g_aCache.Length; i++)
         {
-            int iCache[paintsCache];
-            g_aCache.GetArray(i, iCache[0]);
+            Player pCache;
+            g_aCache.GetArray(i, pCache, sizeof(pCache));
             
-            if (StrEqual(sCommunityID, iCache[pC_sCommunityID], true))
+            if (StrEqual(sCommunityID, pCache.CommunityID, true))
             {
                 g_aCache.Erase(i);
             }
@@ -493,7 +491,7 @@ void UpdateClientMySQL(int client, const char[] sClass, int defIndex, float fWea
         char sEName[512];
         g_dDB.Escape(sNametag, sEName, sizeof(sEName));
         
-        Format(sQuery, sizeof(sQuery), "INSERT INTO weaponPaints (communityid, classname, defindex, wear, seed, quality, nametag) VALUES (\"%s\", \"%s\", '%d', %.4f, '%d', '%d', \"%s\") ON DUPLICATE KEY UPDATE  defindex = '%d', wear = %.4f, seed = '%d', quality = '%d', nametag = \"%s\";", sCommunityID, sClass, defIndex, fWear, iSeed, iQuality, sEName, defIndex, fWear, iSeed, iQuality, sEName);
+        Format(sQuery, sizeof(sQuery), "INSERT INTO weaponPaints (communityid, classname, defindex, wear, seed, quality, nametag) VALUES (\"%s\", \"%s\", '%d', %f, '%d', '%d', \"%s\") ON DUPLICATE KEY UPDATE  defindex = '%d', wear = %f, seed = '%d', quality = '%d', nametag = \"%s\";", sCommunityID, sClass, defIndex, fWear, iSeed, iQuality, sEName, defIndex, fWear, iSeed, iQuality, sEName);
         
         if (g_bDebug)
         {
@@ -529,15 +527,15 @@ void UpdateClientArray(int client, const char[] sClass, int defIndex, float fWea
         // Remove current/old array entry
         for (int i = 0; i < g_aCache.Length; i++)
         {
-            int iCache[paintsCache];
-            g_aCache.GetArray(i, iCache[0]);
+            Player pCache;
+            g_aCache.GetArray(i, pCache, sizeof(pCache));
             
-            if (StrEqual(sCommunityID, iCache[pC_sCommunityID], true) && StrEqual(sClass, iCache[pC_sClassName], true))
+            if (StrEqual(sCommunityID, pCache.CommunityID, true) && StrEqual(sClass, pCache.ClassName, true))
             {
-                strcopy(oldName, sizeof(oldName), iCache[pC_sNametag]);
+                strcopy(oldName, sizeof(oldName), pCache.Nametag);
                 if (g_bDebug)
                 {
-                    LogMessage("[UpdateClientArray] Player: \"%L\" - CommunityID: %s - Classname: %s - DefIndex: %d - Wear: %.4f - Seed: %d - Quality: %d - Nametag: %s", client, iCache[pC_sCommunityID], iCache[pC_sClassName], iCache[pC_iDefIndex], iCache[pC_fWear], iCache[pC_iSeed], iCache[pC_iQuality], iCache[pC_sNametag]);
+                    LogMessage("[UpdateClientArray] Player: \"%L\" - CommunityID: %s - Classname: %s - DefIndex: %d - Wear: %.4f - Seed: %d - Quality: %d - Nametag: %s", client, pCache.CommunityID, pCache.ClassName, pCache.DefIndex, pCache.Wear, pCache.Seed, pCache.Quality, pCache.Nametag);
                 }
                 
                 g_aCache.Erase(i);
@@ -546,26 +544,26 @@ void UpdateClientArray(int client, const char[] sClass, int defIndex, float fWea
         }
         
         // Insert new array entry
-        int tmpCache[paintsCache];
-        strcopy(tmpCache[pC_sCommunityID], WP_COMMUNITYID, sCommunityID);
-        strcopy(tmpCache[pC_sClassName], WP_CLASSNAME, sClass);
-        tmpCache[pC_iDefIndex] = defIndex;
-        tmpCache[pC_fWear] = fWear;
-        tmpCache[pC_iSeed] = iSeed;
-        tmpCache[pC_iQuality] = iQuality;
+        Player pCache;
+        strcopy(pCache.CommunityID, WP_COMMUNITYID, sCommunityID);
+        strcopy(pCache.ClassName, WP_CLASSNAME, sClass);
+        pCache.DefIndex = defIndex;
+        pCache.Wear = fWear;
+        pCache.Seed = iSeed;
+        pCache.Quality = iQuality;
         
         if(strlen(sNametag) > 2 && !StrEqual(sNametag, "delete", false))
-            strcopy(tmpCache[pC_sNametag], 128, sNametag);
+            strcopy(pCache.Nametag, 128, sNametag);
         else if (StrEqual(sNametag, "delete", false))
-            Format(tmpCache[pC_sNametag], 128, "");
+            Format(pCache.Nametag, 128, "");
         else
-            strcopy(tmpCache[pC_sNametag], 128, oldName);
+            strcopy(pCache.Nametag, 128, oldName);
         
         if (g_bDebug)
         {
-            PrintToChat(client, "nametag: %s new: %s", tmpCache[pC_sNametag], sNametag);
+            PrintToChat(client, "nametag: %s new: %s", pCache.Nametag, sNametag);
         }
-        g_aCache.PushArray(tmpCache[0]);
+        g_aCache.PushArray(pCache);
     }
 }
 
@@ -626,10 +624,8 @@ bool IsValidDef(int client, int defIndex, bool message = false)
 
 void AddWeaponSkinsToMenu(Menu menu, int client, int weapon = -1, bool activeWeapon = true, int wDefIndex = -1)
 {
-    int iSkins[skinsList];
-    
     delete g_aSkins;
-    g_aSkins = new ArrayList(sizeof(iSkins));
+    g_aSkins = new ArrayList(sizeof(Skins));
     
     for (int i = 0; i <= CSGOItems_GetSkinCount(); i++)
     {
@@ -651,13 +647,13 @@ void AddWeaponSkinsToMenu(Menu menu, int client, int weapon = -1, bool activeWea
             Format(sDisplay, sizeof(sDisplay), "%s %s", sDisplay, sBuffer);
         }
         
-        int skins[skinsList];
+        Skins sSkins;
         
-        skins[siDef] = defIndex;
-        strcopy(skins[ssDef], 12, sDefIndex);
-        strcopy(skins[ssName], WP_DISPLAY, sDisplay);
+        sSkins.IntDef = defIndex;
+        strcopy(sSkins.StringDef, 12, sDefIndex);
+        strcopy(sSkins.Name, WP_DISPLAY, sDisplay);
         
-        g_aSkins.PushArray(skins[0]);
+        g_aSkins.PushArray(sSkins);
     }
     
     SortADTArrayCustom(g_aSkins, Sort_Skins);
@@ -679,8 +675,8 @@ void AddWeaponSkinsToMenu(Menu menu, int client, int weapon = -1, bool activeWea
     
     for (int i = 0; i < g_aSkins.Length; i++)
     {
-        int iSkins2[skinsList];
-        g_aSkins.GetArray(i, iSkins2[0]);
+        Skins sSkins;
+        g_aSkins.GetArray(i, sSkins, sizeof(sSkins));
         
         if (IsValidEntity(weapon) && activeWeapon)
         {
@@ -698,9 +694,9 @@ void AddWeaponSkinsToMenu(Menu menu, int client, int weapon = -1, bool activeWea
             }
             
             char sEntry[WP_DISPLAY + 8];
-            Format(sEntry, sizeof(sEntry), "[%d] %s", iSkins2[siDef], iSkins2[ssName]);
+            Format(sEntry, sizeof(sEntry), "[%d] %s", sSkins.IntDef, sSkins.Name);
             
-            if (StrEqual(iSkins2[ssName], "default", false))
+            if (StrEqual(sSkins.Name, "default", false))
             {
                 continue;
             }
@@ -708,7 +704,7 @@ void AddWeaponSkinsToMenu(Menu menu, int client, int weapon = -1, bool activeWea
             if (!g_bAllSkins[client])
             {
                 int iWeaponNum = CSGOItems_GetWeaponNumByWeapon(weapon);
-                int iSkinNum = CSGOItems_GetSkinNumByDefIndex(iSkins2[siDef]);
+                int iSkinNum = CSGOItems_GetSkinNumByDefIndex(sSkins.IntDef);
 
                 if (!CSGOItems_IsNativeSkin(iSkinNum, iWeaponNum, ITEMTYPE_WEAPON))
                 {
@@ -716,31 +712,31 @@ void AddWeaponSkinsToMenu(Menu menu, int client, int weapon = -1, bool activeWea
                 }
             }
             
-            if(iSkins2[siDef] != isDef)
+            if(sSkins.IntDef != isDef)
             {
                 if (g_bDebug)
                 {
-                    PrintToChat(client, "iSkins2: %d [%s] - isDef: %d", iSkins2[siDef], iSkins2[ssDef], isDef);
+                    PrintToChat(client, "iSkins2: %d [%s] - isDef: %d", sSkins.IntDef, sSkins.StringDef, isDef);
                 }
                 
                 if (!g_bDebug)
                 {
-                    menu.AddItem(iSkins2[ssDef], iSkins2[ssName]);
+                    menu.AddItem(sSkins.StringDef, sSkins.Name);
                 }
                 else
                 {
-                    menu.AddItem(iSkins2[ssDef], sEntry);
+                    menu.AddItem(sSkins.StringDef, sEntry);
                 }
             }
             else
             {
                 if (!g_bDebug)
                 {
-                    menu.AddItem(iSkins2[ssDef], iSkins2[ssName], ITEMDRAW_DISABLED);
+                    menu.AddItem(sSkins.StringDef, sSkins.Name, ITEMDRAW_DISABLED);
                 }
                 else
                 {
-                    menu.AddItem(iSkins2[ssDef], sEntry, ITEMDRAW_DISABLED);
+                    menu.AddItem(sSkins.StringDef, sEntry, ITEMDRAW_DISABLED);
                 }
             }
         }
@@ -758,17 +754,17 @@ void AddWeaponSkinsToMenu(Menu menu, int client, int weapon = -1, bool activeWea
             }
             
             char sEntry[WP_DISPLAY + 8];
-            Format(sEntry, sizeof(sEntry), "[%d] %s", iSkins2[siDef], iSkins2[ssName]);
+            Format(sEntry, sizeof(sEntry), "[%d] %s", sSkins.IntDef, sSkins.Name);
             
             if (g_bDebug)
             {
-                PrintToChat(client, "iSkins2: %d [%s]", iSkins2[siDef], iSkins2[ssDef]);
+                PrintToChat(client, "iSkins2: %d [%s]", sSkins.IntDef, sSkins.StringDef);
             }
 
             if (!g_bAllSkins[client])
             {
                 int iWeaponNum = CSGOItems_GetWeaponNumByDefIndex(wDefIndex);
-                int iSkinNum = CSGOItems_GetSkinNumByDefIndex(iSkins2[siDef]);
+                int iSkinNum = CSGOItems_GetSkinNumByDefIndex(sSkins.IntDef);
 
                 if (!CSGOItems_IsNativeSkin(iSkinNum, iWeaponNum, ITEMTYPE_WEAPON))
                 {
@@ -778,11 +774,11 @@ void AddWeaponSkinsToMenu(Menu menu, int client, int weapon = -1, bool activeWea
             
             if (!g_bDebug)
             {
-                menu.AddItem(iSkins2[ssDef], iSkins2[ssName]);
+                menu.AddItem(sSkins.StringDef, sSkins.Name);
             }
             else
             {
-                menu.AddItem(iSkins2[ssDef], sEntry);
+                menu.AddItem(sSkins.StringDef, sEntry);
             }
         }
     }
@@ -790,24 +786,24 @@ void AddWeaponSkinsToMenu(Menu menu, int client, int weapon = -1, bool activeWea
 
 public int Sort_Skins(int i, int j, Handle array, Handle hndl)
 {
-    int iTemp1[skinsList];
-    int iTemp2[skinsList];
+    Skins sSkins1;
+    Skins sSkins2;
 
-    g_aSkins.GetArray(i, iTemp1[0]);
-    g_aSkins.GetArray(j, iTemp2[0]);
+    g_aSkins.GetArray(i, sSkins1, sizeof(sSkins1));
+    g_aSkins.GetArray(j, sSkins2, sizeof(sSkins2));
 
-    return strcmp(iTemp1[ssName], iTemp2[ssName]);
+    return strcmp(sSkins1.Name, sSkins2.Name);
 }
 
 public int Sort_Weapons(int i, int j, Handle array, Handle hndl)
 {
-    int iTemp1[weaponsList];
-    int iTemp2[weaponsList];
+    Weapons wWeapon1;
+    Weapons wWeapon2;
 
-    g_aWeapons.GetArray(i, iTemp1[0]);
-    g_aWeapons.GetArray(j, iTemp2[0]);
+    g_aWeapons.GetArray(i, wWeapon1, sizeof(wWeapon1));
+    g_aWeapons.GetArray(j, wWeapon2, sizeof(wWeapon2));
 
-    return strcmp(iTemp1[ssName], iTemp2[ssName]);
+    return strcmp(wWeapon1.Name, wWeapon2.Name);
 }
 
 bool CanChange(int client)

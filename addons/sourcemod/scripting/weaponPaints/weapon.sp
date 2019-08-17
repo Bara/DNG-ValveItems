@@ -113,10 +113,8 @@ public int Menu_ChooseWeaponSkin(Menu menu, MenuAction action, int client, int p
 
 void AddWeaponsToMenu(int client, Menu menu)
 {
-    int iWeapons[weaponsList];
-    
     delete g_aWeapons;
-    g_aWeapons = new ArrayList(sizeof(iWeapons));
+    g_aWeapons = new ArrayList(sizeof(Weapons));
     
     for (int i = 0; i <= CSGOItems_GetWeaponCount(); i++)
     {
@@ -128,12 +126,12 @@ void AddWeaponsToMenu(int client, Menu menu)
         
         if (IsValidDef(client, defIndex, false) && strlen(sDisplay) > 2)
         {
-            int weapons[weaponsList];
-            weapons[wiDef] = defIndex;
-            strcopy(weapons[wsDef], 12, sDefIndex);
-            strcopy(weapons[wsName], WP_DISPLAY, sDisplay);
+            Weapons wWeapon;
+            wWeapon.IntDef = defIndex;
+            strcopy(wWeapon.StringDef, 12, sDefIndex);
+            strcopy(wWeapon.Name, WP_DISPLAY, sDisplay);
                 
-            g_aWeapons.PushArray(weapons[0]);
+            g_aWeapons.PushArray(wWeapon);
         }
     }
     
@@ -141,24 +139,24 @@ void AddWeaponsToMenu(int client, Menu menu)
     
     for (int i = 0; i < g_aWeapons.Length; i++)
     {
-        int iWeapons2[skinsList];
-        g_aWeapons.GetArray(i, iWeapons2[0]);
+        Weapons wWeapon;
+        g_aWeapons.GetArray(i, wWeapon, sizeof(wWeapon));
         
         char sEntry[WP_DISPLAY + 8];
-        Format(sEntry, sizeof(sEntry), "[%d] %s", iWeapons2[wiDef], iWeapons2[wsName]);
+        Format(sEntry, sizeof(sEntry), "[%d] %s", wWeapon.IntDef, wWeapon.Name);
         
         if (g_bDebug)
         {
-            PrintToChat(client, "iWeapons2: %d [%s]", iWeapons2[wiDef], iWeapons2[wsDef]);
+            PrintToChat(client, "iWeapons2: %d [%s]", wWeapon.IntDef, wWeapon.StringDef);
         }
         
         if (!g_bDebug)
         {
-            menu.AddItem(iWeapons2[wsDef], iWeapons2[wsName]);
+            menu.AddItem(wWeapon.StringDef, wWeapon.Name);
         }
         else
         {
-            menu.AddItem(iWeapons2[wsDef], sEntry);
+            menu.AddItem(wWeapon.StringDef, sEntry);
         }
     }
 }

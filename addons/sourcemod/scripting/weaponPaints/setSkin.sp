@@ -179,8 +179,8 @@ void SetPaints(int client, int weapon)
         {
             for (int i = 0; i < g_aCache.Length; i++)
             {
-                int iCache[paintsCache];
-                g_aCache.GetArray(i, iCache[0]);
+                Player pCache;
+                g_aCache.GetArray(i, pCache, sizeof(pCache));
                 
                 char sCommunityID[WP_COMMUNITYID];
                 
@@ -189,11 +189,11 @@ void SetPaints(int client, int weapon)
                     return;
                 }
                 
-                if (StrEqual(sCommunityID, iCache[pC_sCommunityID], true) && StrEqual(sClass, iCache[pC_sClassName], true))
+                if (StrEqual(sCommunityID, pCache.CommunityID, true) && StrEqual(sClass, pCache.ClassName, true))
                 {
                     if (g_bDebug)
                     {
-                        LogMessage("[OnWeaponEquipPost] Player: \"%L\" - CommunityID/cCommunityID: %s/%s - Classname/cClassname: %s/%s - DefIndex: %d - Wear: %.4f - Seed: %d - Quality: %d - Nametag: %s", client, sCommunityID, iCache[pC_sCommunityID], sClass, iCache[pC_sClassName], iCache[pC_iDefIndex], iCache[pC_fWear], iCache[pC_iSeed], iCache[pC_iQuality], iCache[pC_sNametag]);
+                        LogMessage("[OnWeaponEquipPost] Player: \"%L\" - CommunityID/cCommunityID: %s/%s - Classname/cClassname: %s/%s - DefIndex: %d - Wear: %.4f - Seed: %d - Quality: %d - Nametag: %s", client, sCommunityID, pCache.CommunityID, sClass, pCache.ClassName, pCache.DefIndex, pCache.Wear, pCache.Seed, pCache.Quality, pCache.Nametag);
                     }
                     
                     if(CSGOItems_IsDefIndexKnife(iDef) && (Knifes_GetIndex(client) < 1))
@@ -205,30 +205,30 @@ void SetPaints(int client, int weapon)
                     static int IDHigh = 11111;
                     SetEntProp(weapon, Prop_Send, "m_iItemIDHigh", IDHigh++);
                     
-                    if (iCache[pC_iDefIndex] > 0)
+                    if (pCache.DefIndex > 0)
                     {
-                        if (iCache[pC_iDefIndex] == 1)
+                        if (pCache.DefIndex == 1)
                         {
                             SetEntProp(weapon, Prop_Send, "m_nFallbackPaintKit", CSGOItems_GetRandomSkin());
                         }
                         else
                         {
-                            SetEntProp(weapon, Prop_Send, "m_nFallbackPaintKit", iCache[pC_iDefIndex]);
+                            SetEntProp(weapon, Prop_Send, "m_nFallbackPaintKit", pCache.DefIndex);
                         }
                     }
                     
-                    SetEntPropFloat(weapon, Prop_Send, "m_flFallbackWear", iCache[pC_fWear]);
-                    SetEntProp(weapon, Prop_Send, "m_nFallbackSeed", iCache[pC_iSeed]);
-                    SetEntProp(weapon, Prop_Send, "m_iEntityQuality", iCache[pC_iQuality]);
+                    SetEntPropFloat(weapon, Prop_Send, "m_flFallbackWear", pCache.Wear);
+                    SetEntProp(weapon, Prop_Send, "m_nFallbackSeed", pCache.Seed);
+                    SetEntProp(weapon, Prop_Send, "m_iEntityQuality", pCache.Quality);
                     
-                    /* if(strlen(iCache[pC_sNametag]) > 2 && !StrEqual(iCache[pC_sNametag], "delete", false))
+                    /* if(strlen(pCache.Nametag) > 2 && !StrEqual(pCache.Nametag, "delete", false))
                     {
-                        SetEntDataString(weapon, FindSendPropInfo("CBaseAttributableItem", "m_szCustomName"), iCache[pC_sNametag], 128);
+                        SetEntDataString(weapon, FindSendPropInfo("CBaseAttributableItem", "m_szCustomName"), pCache.Nametag, 128);
                     } */
                     
                     if (g_bDebug)
                     {
-                        LogMessage("[OnWeaponEquipPost (Equal)] Player: \"%L\" - Skin Index: %d", client, iCache[pC_iDefIndex]);
+                        LogMessage("[OnWeaponEquipPost (Equal)] Player: \"%L\" - Skin Index: %d", client, pCache.DefIndex);
                     }
                     
                     break;
