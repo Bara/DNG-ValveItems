@@ -319,7 +319,7 @@ public Action Command_WS(int client, int args)
         menu.AddItem("wear", sBuffer, ITEMDRAW_DISABLED);
     }
     
-    if(IsPlayerAlive(client))
+    if(g_iNametag > 0 && IsPlayerAlive(client))
     {
         Format(sBuffer, sizeof(sBuffer), "%T", "Menu Change nametag", client);
         menu.AddItem("nametag", sBuffer);

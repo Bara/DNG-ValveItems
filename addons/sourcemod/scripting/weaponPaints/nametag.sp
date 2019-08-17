@@ -29,6 +29,11 @@ public int Menu_ChangeNametag(Menu menu, MenuAction action, int client, int para
 
 public Action Command_Nametag(int client, int args)
 {
+    if (g_iNametag < 1)
+    {
+        return Plugin_Handled;
+    }
+    
     if(!IsClientValid(client))
     {
         return Plugin_Handled;
