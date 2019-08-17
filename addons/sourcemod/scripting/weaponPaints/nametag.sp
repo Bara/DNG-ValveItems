@@ -33,7 +33,7 @@ public Action Command_Nametag(int client, int args)
     {
         return Plugin_Handled;
     }
-    
+
     if(!IsClientValid(client))
     {
         return Plugin_Handled;
@@ -110,48 +110,14 @@ public Action Command_Nametag(int client, int args)
             CPrintToChat(client, "Command_Nametag 2 - Nametag: %s", sName);
         }
         
-        UpdateClientArray(client, sClass, iDef, fWear, iSeed, DEFAULT_QUALITY, sName);
+        UpdateClientArray(client, sClass, iDef, fWear, iSeed, DEFAULT_QUALITY, sName, true);
         UpdateClientMySQL(client, sClass, iDef, fWear, iSeed, DEFAULT_QUALITY, sName);
         
         if (g_bDebug)
         {
             CPrintToChat(client, "Command_Nametag 2 - iWeapon: %d", iWeapon);
         }
-        
-        if (iWeapon != -1)
-        {
-            int iClip = GetEntData(iWeapon, g_iClip1);
-            int iAmmo = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryReserveAmmoCount");
-            
-            if (g_bDebug)
-            {
-                CPrintToChat(client, "Command_Nametag 2.1");
-            }
-            
-            bool bSuccess = CSGOItems_RemoveWeapon(client, iWeapon);
-            
-            if (g_bDebug)
-            {
-                CPrintToChat(client, "CSGOItems_RemoveWeapon: %d", bSuccess);
-            }
-            
-            if (bSuccess)
-            {
-                DataPack pack = new DataPack();
-                RequestFrame(Frame_GivePlayerItem, pack);
-                pack.WriteCell(GetClientUserId(client));
-                pack.WriteString(sClass);
-                pack.WriteCell(-1);
-                pack.WriteCell(iClip);
-                pack.WriteCell(iAmmo);
-                pack.WriteCell(true);
-            }
-            
-            if (g_bDebug)
-            {
-                CPrintToChat(client, "Command_Nametag 2.2");
-            }
-        }
+
     }
     
     return Plugin_Continue;

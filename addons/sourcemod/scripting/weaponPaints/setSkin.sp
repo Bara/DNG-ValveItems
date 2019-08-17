@@ -229,6 +229,11 @@ void SetPaints(int client, int weapon)
                     
                     if(g_iNametag > 0 && strlen(pCache.Nametag) > 2 && !StrEqual(pCache.Nametag, "delete", false))
                     {
+                        if (g_bDebug)
+                        {
+                            PrintToChat(client, "Nametag: %s", pCache.Nametag);
+                        }
+                        
                         SetEntDataString(weapon, g_iNametag,  pCache.Nametag, sizeof(Player::Nametag));
                     }
                     

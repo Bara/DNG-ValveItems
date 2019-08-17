@@ -525,7 +525,7 @@ public void OnUpdateClientArray(Database db, DBResultSet results, const char[] e
     }
 }
 
-void UpdateClientArray(int client, const char[] sClass, int defIndex, float fWear, int iSeed, int iQuality, char[] sNametag = "")
+void UpdateClientArray(int client, const char[] sClass, int defIndex, float fWear, int iSeed, int iQuality, char[] sNametag, bool giveWeapon = false)
 {
     if (g_dDB != null)
     {
@@ -537,6 +537,13 @@ void UpdateClientArray(int client, const char[] sClass, int defIndex, float fWea
         }
         
         char oldName[512];
+
+        if (g_bDebug)
+        {
+            PrintToChat(client, "(UpdateClientArray) 1 - Nametag: %s", sNametag);
+        }
+
+        int iIndex = -1;
         
         // Remove current/old array entry
         for (int i = 0; i < g_aCache.Length; i++)
@@ -546,15 +553,35 @@ void UpdateClientArray(int client, const char[] sClass, int defIndex, float fWea
             
             if (StrEqual(sCommunityID, pCache.CommunityID, true) && StrEqual(sClass, pCache.ClassName, true))
             {
+                if (g_bDebug)
+                {
+                    PrintToChat(client, "------");
+                    PrintToChat(client, "sCommunityID: %s, pCache.CommunityID: %s", sCommunityID, pCache.CommunityID);
+                    PrintToChat(client, "sClass: %s, pCache.ClassName: %s", sClass, pCache.ClassName);
+                }
+                
                 strcopy(oldName, sizeof(oldName), pCache.Nametag);
                 if (g_bDebug)
                 {
                     LogMessage("[UpdateClientArray] Player: \"%L\" - CommunityID: %s - Classname: %s - DefIndex: %d - Wear: %.4f - Seed: %d - Quality: %d - Nametag: %s", client, pCache.CommunityID, pCache.ClassName, pCache.DefIndex, pCache.Wear, pCache.Seed, pCache.Quality, pCache.Nametag);
                 }
                 
-                g_aCache.Erase(i);
+                // g_aCache.Erase(i);
+                iIndex = i;
+
+                if (g_bDebug)
+                {
+                    PrintToChat(client, "Erase: %d", i);
+                    PrintToChat(client, "------");
+                }
+
                 break;
             }
+        }
+
+        if (g_bDebug)
+        {
+            PrintToChat(client, "(UpdateClientArray) Compare... sNametag: %s, oldName: %s", sNametag, oldName);
         }
         
         // Insert new array entry
@@ -567,17 +594,72 @@ void UpdateClientArray(int client, const char[] sClass, int defIndex, float fWea
         pCache.Quality = iQuality;
         
         if(strlen(sNametag) > 2 && !StrEqual(sNametag, "delete", false))
-            strcopy(pCache.Nametag, 128, sNametag);
+            strcopy(pCache.Nametag, sizeof(Player::Nametag), sNametag);
         else if (StrEqual(sNametag, "delete", false))
-            Format(pCache.Nametag, 128, "");
+            Format(pCache.Nametag, sizeof(Player::Nametag), "");
         else
-            strcopy(pCache.Nametag, 128, oldName);
+        {
+            strcopy(pCache.Nametag, sizeof(Player::Nametag), oldName);
+        }
+        
+        if (g_bDebug)
+        {
+            PrintToChat(client, "pCache.Nametag: %s, sNametag: %s", pCache.Nametag, sNametag);
+        }
         
         if (g_bDebug)
         {
             PrintToChat(client, "nametag: %s new: %s", pCache.Nametag, sNametag);
         }
-        g_aCache.PushArray(pCache);
+
+        if (iIndex != -1)
+        {
+            g_aCache.SetArray(iIndex, pCache);
+        }
+        else
+        {
+            g_aCache.PushArray(pCache);
+        }
+
+        if (giveWeapon)
+        {
+            int iWeapon = CSGOItems_GetActiveWeapon(client);
+
+            if (iWeapon != -1)
+            {
+                int iClip = GetEntData(iWeapon, g_iClip1);
+                int iAmmo = GetEntProp(iWeapon, Prop_Send, "m_iPrimaryReserveAmmoCount");
+                
+                if (g_bDebug)
+                {
+                    CPrintToChat(client, "UpdateClientArray 2.1");
+                }
+                
+                bool bSuccess = CSGOItems_RemoveWeapon(client, iWeapon);
+                
+                if (g_bDebug)
+                {
+                    CPrintToChat(client, "CSGOItems_RemoveWeapon: %d", bSuccess);
+                }
+                
+                if (bSuccess)
+                {
+                    DataPack pack = new DataPack();
+                    RequestFrame(Frame_GivePlayerItem, pack);
+                    pack.WriteCell(GetClientUserId(client));
+                    pack.WriteString(sClass);
+                    pack.WriteCell(-1);
+                    pack.WriteCell(iClip);
+                    pack.WriteCell(iAmmo);
+                    pack.WriteCell(true);
+                }
+                
+                if (g_bDebug)
+                {
+                    CPrintToChat(client, "UpdateClientArray 2.2");
+                }
+            }
+        }
     }
 }
 
