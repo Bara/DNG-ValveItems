@@ -260,8 +260,8 @@ INCLUDES
 #include <sdktools>
 #include <cstrike> 
 #include <sdkhooks> 
+#include <profiler>
 #include <csgoitems> 
-#include <SteamWorks> 
 #include <autoexecconfig> 
 #include <regex>
 #include <dynamic>
@@ -331,12 +331,9 @@ bool g_bIsDefIndexSkinnable[1000];
 bool g_bSkinNumGloveApplicable[1000];
 bool g_bItemsSynced;
 bool g_bItemsSyncing;
-bool g_bLanguageDownloading;
-bool g_bSchemaDownloading;
 bool g_bGivingWeapon[MAXPLAYERS + 1];
 bool g_bIsNativeSkin[3][1000][1000];
 bool g_bIsSkinInSet[1000][1000];
-bool g_bSteamWorksLoaded = false;
 bool g_bRoundEnd = false;
 bool g_bSpraysEnabled = false;
 bool g_bFollowGuidelines = false;
@@ -416,6 +413,8 @@ public void OnPluginStart()
 	
 	AddNormalSoundHook(OnNormalSoundPlayed);
 	FindAndHookHibernation();
+
+	RetrieveLanguage();
 }
 
 public void OnCvarChanged(ConVar hConVar, const char[] szOldValue, const char[] szNewValue)
@@ -425,36 +424,6 @@ public void OnCvarChanged(ConVar hConVar, const char[] szOldValue, const char[] 
 	} else if (hConVar == g_hCvarHibernation && view_as<bool>(StringToInt(szNewValue)) && !g_bItemsSynced) {
 		g_hCvarHibernation.BoolValue = false;
 		g_bHibernation = true;
-	}
-}
-
-public void SteamWorks_SteamServersConnected() {
-	RetrieveLanguage();
-}
-
-public Action SteamWorks_RestartRequested()
-{
-	RetrieveLanguage();
-}
-
-public void OnAllPluginsLoaded() {
-	g_bSteamWorksLoaded = LibraryExists("SteamWorks");
-	
-	if (g_bSteamWorksLoaded) {
-		RetrieveLanguage();
-	}
-}
-
-public void OnLibraryAdded(const char[] szName) {
-	if (StrEqual(szName, "SteamWorks")) {
-		g_bSteamWorksLoaded = true;
-		RetrieveLanguage();
-	}
-}
-
-public void OnLibraryRemoved(const char[] szName) {
-	if (StrEqual(szName, "SteamWorks")) {
-		g_bSteamWorksLoaded = false;
 	}
 }
 
@@ -756,12 +725,8 @@ public void OnWeaponDropPost(int iClient, int iWeapon)
 public bool RetrieveLanguage()
 {
 	FindAndHookHibernation();
-	
-	if (!g_bSteamWorksLoaded) {
-		return false;
-	}
-	
-	if (g_bLanguageDownloading || g_bSchemaDownloading || g_bItemsSyncing || !SteamWorks_IsConnected()) {
+
+	if (g_bItemsSyncing) {
 		return false;
 	}
 	
@@ -777,11 +742,7 @@ public bool RetrieveLanguage()
 
 public Action Timer_Wait1(Handle hTimer)
 {
-	if (!g_bSteamWorksLoaded) {
-		return Plugin_Stop;
-	}
-	
-	if (g_bLanguageDownloading || g_bSchemaDownloading || g_bItemsSyncing || !SteamWorks_IsConnected()) {
+	if (g_bItemsSyncing) {
 		return Plugin_Stop;
 	}
 	
@@ -799,6 +760,8 @@ public Action Timer_SyncLanguage(Handle hTimer)
 	if (g_bRoundEnd) {
 		return Plugin_Continue;
 	}
+
+	ConvertResourceFile("english");
 	
 	Handle hLanguageFile = OpenFile("resource/csgo_english.txt.utf8", "r");
 	
@@ -806,7 +769,6 @@ public Action Timer_SyncLanguage(Handle hTimer)
 		ReadFileString(hLanguageFile, g_szLangPhrases, 21982192);
 	}
 	else {
-		g_bLanguageDownloading = false;
 		delete hLanguageFile;
 		
 		DeleteFile("resource/csgo_english.txt.utf8");
@@ -823,7 +785,6 @@ public Action Timer_SyncLanguage(Handle hTimer)
 	
 	delete hLanguageFile;
 	
-	g_bLanguageDownloading = false;
 	g_iLanguageDownloadAttempts = 0;
 	LogMessage("UTF-8 language file successfully processed, retrieving item schema.");
 	
@@ -834,11 +795,7 @@ public Action Timer_SyncLanguage(Handle hTimer)
 
 public bool RetrieveItemSchema()
 {
-	if (!g_bSteamWorksLoaded) {
-		return false;
-	}
-	
-	if (g_bLanguageDownloading || g_bSchemaDownloading || g_bItemsSyncing || !SteamWorks_IsConnected()) {
+	if (g_bItemsSyncing) {
 		return false;
 	}
 	
@@ -854,11 +811,7 @@ public bool RetrieveItemSchema()
 
 public Action Timer_Wait2(Handle hTimer)
 {
-	if (!g_bSteamWorksLoaded) {
-		return Plugin_Stop;
-	}
-	
-	if (g_bLanguageDownloading || g_bSchemaDownloading || g_bItemsSyncing || !SteamWorks_IsConnected()) {
+	if (g_bItemsSyncing) {
 		return Plugin_Stop;
 	}
 	
@@ -877,19 +830,7 @@ public Action Timer_SyncSchema(Handle hTimer)
 		return Plugin_Continue;
 	}
 
-	Dynamic dItemsGame = Dynamic();
-	Dynamic_ReadKeyValues(dItemsGame, "scripts/items/items_game.txt", 2048, PK_ReadDynamicKeyValue);
-	Dynamic_GetDynamic(dItemsGame, "items");
-	Dynamic_GetDynamic(dItemsGame, "paint_kits");
-	Dynamic_GetDynamic(dItemsGame, "music_definitions");
-	Dynamic_GetDynamic(dItemsGame, "item_sets");
-	Dynamic_GetDynamic(dItemsGame, "sticker_kits");
-	Dynamic_GetDynamic(dItemsGame, "paint_kits_rarity");
-	Dynamic_GetDynamic(dItemsGame, "used_by_classes");
-	Dynamic_GetDynamic(dItemsGame, "attributes");
-	Dynamic_GetDynamic(dItemsGame, "prefabs");
-	Dynamic_WriteKeyValues(dItemsGame, "scripts/items/items_game_dynamic.txt", "items_game");
-	dItemsGame.Dispose(true);
+	RebaseItemsGame();
 	
 	Handle hSchemaFile = OpenFile("scripts/items/items_game_dynamic.txt", "r");
 	
@@ -914,7 +855,6 @@ public Action Timer_SyncSchema(Handle hTimer)
 	
 	delete hSchemaFile;
 	
-	g_bSchemaDownloading = false;
 	g_iSchemaDownloadAttempts = 0;
 	
 	int iStart = GetTime();
@@ -3931,3 +3871,138 @@ stock int FindStringIndex2(int tableidx, const char[] str)
 	
 	return INVALID_STRING_INDEX;
 } 
+
+void RebaseItemsGame()
+{
+    LogMessage("Rebase `items_game.txt`");
+
+    Profiler profiler = new Profiler();
+    profiler.Start();
+
+    Dynamic dItemsGame = Dynamic();
+    dItemsGame.ReadKeyValues("scripts/items/items_game.txt", PLATFORM_MAX_PATH, ReadDynamicKeyValue);
+    dItemsGame.GetDynamic("items");
+    dItemsGame.GetDynamic("paint_kits");
+    dItemsGame.GetDynamic("music_definitions");
+    dItemsGame.GetDynamic("item_sets");
+    dItemsGame.GetDynamic("sticker_kits");
+    dItemsGame.GetDynamic("paint_kits_rarity");
+    dItemsGame.GetDynamic("used_by_classes");
+    dItemsGame.GetDynamic("attributes");
+    dItemsGame.GetDynamic("prefabs");
+    dItemsGame.WriteKeyValues("scripts/items/items_game_dynamic.txt", "items_game");
+    dItemsGame.Dispose(true);
+
+    profiler.Stop();
+    float fTime = profiler.Time;
+    delete profiler;
+
+    LogMessage("RebaseItemsGame took %f seconds.", fTime);
+}
+
+public Action ReadDynamicKeyValue(Dynamic obj, const char[] member, int depth)
+{
+    if (depth == 0)
+    {
+        return Plugin_Continue;
+    }
+    
+    if (depth == 1)
+    {
+        if (StrEqual(member, "items"))
+        {
+            return Plugin_Continue;
+        }
+        else if (StrEqual(member, "paint_kits"))
+        {
+            return Plugin_Continue;
+        }
+        else if (StrEqual(member, "music_definitions"))
+        {
+            return Plugin_Continue;
+        }
+        else if (StrEqual(member, "item_sets"))
+        {
+            return Plugin_Continue;
+        }
+        else if (StrEqual(member, "sticker_kits"))
+        {
+            return Plugin_Continue;
+        }
+        else if (StrEqual(member, "paint_kits_rarity"))
+        {
+            return Plugin_Continue;
+        }
+        else if (StrEqual(member, "used_by_classes"))
+        {
+            return Plugin_Continue;
+        }
+        else if (StrEqual(member, "attributes"))
+        {
+            return Plugin_Continue;
+        }
+        else if (StrEqual(member, "prefabs"))
+        {
+            return Plugin_Continue;
+        }
+        else
+        {
+            return Plugin_Stop;
+        }
+    }
+    
+    return Plugin_Continue;
+}
+
+void ConvertResourceFile(const char[] language)
+{
+    Profiler profiler = new Profiler();
+    profiler.Start();
+
+    LogMessage("Converting `csgo_%s.txt` to UTF-8", language);
+
+    char sOriginal[PLATFORM_MAX_PATH + 1];
+    Format(sOriginal, sizeof(sOriginal), "resource/csgo_%s.txt", language);
+
+    char sModified[PLATFORM_MAX_PATH + 1];
+    Format(sModified, sizeof(sModified), "resource/csgo_%s.txt.utf8", language);
+
+    File fiOriginal = OpenFile(sOriginal, "rb");
+    File fiModified = OpenFile(sModified, "wb");
+    
+    int iBytes;
+    int iBuffer[4096];
+    
+    fiOriginal.Read(iBuffer, 1, 2);
+    
+    int iByte = 0;
+    int iLasteByte = 0;
+    
+    while ((iBytes = fiOriginal.Read(iBuffer, sizeof(iBuffer), 2)) != 0)
+    {
+        for (int i = 0; i < iBytes; i++)
+        {
+            iByte = iBuffer[i];
+            if (iByte > 255)
+                iBuffer[i] = 32;
+            
+            if (iLasteByte == 92 && iByte == 34)
+            {
+                iBuffer[i-1] = 32;
+                iBuffer[i] = 39;
+            }
+            
+            iLasteByte = iBuffer[i];
+        }
+        fiModified.Write(iBuffer, iBytes, 1);
+    }
+    
+    delete fiOriginal;
+    delete fiModified;
+
+    profiler.Stop();
+    float fTime = profiler.Time;
+    delete profiler;
+
+    LogMessage("ConvertResourceFile took %f seconds.", fTime);
+}

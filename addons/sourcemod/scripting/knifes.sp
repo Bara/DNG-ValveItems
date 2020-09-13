@@ -13,13 +13,12 @@
 #include <csgoitems>
 #include <multicolors>
 #include <autoexecconfig>
-#include <groupstatus>
 #include <PTaH>
 
 #pragma newdecls required
 
 #define LoopClients(%1) for(int %1 = 1; %1 <= MaxClients; %1++) if(IsClientValid(%1))
-#define PTAG "{darkblue}[DNG]{default}"
+#define PTAG "{darkblue}[KNIFES]{default}"
 
 #define CHANGE_INTERVAL 5
 #define KNIFE_LENGTH 128
@@ -67,7 +66,6 @@ public int Native_GetIndex(Handle plugin, int numParams)
 public void OnPluginStart()
 {
     LoadTranslations("knifes.phrases");
-    LoadTranslations("groupstatus.phrases");
     
     RegConsoleCmd("sm_knife", Command_Knife);
     RegConsoleCmd("sm_knifes", Command_Knife);
@@ -478,22 +476,6 @@ public Action Command_Knife(int client, int args)
     {
         return Plugin_Handled;
     }
-
-    if (!GroupStatus_IsClientInGroup(client))
-    {
-        ConVar cvar = FindConVar("groupstatus_url");
-
-        if (cvar != null)
-        {
-            char sURL[256], sName[64];
-            cvar.GetString(sName, sizeof(sName));
-            Format(sURL, sizeof(sURL), "https://steamcommunity.com/groups/%s", sName);
-
-            CPrintToChat(client, "%T", "In Group: No", client, sName);
-        }
-
-        return Plugin_Handled;
-    }
     
     ShowKnifeMenu(client);
     
@@ -504,22 +486,6 @@ public Action Command_RKnife(int client, int args)
 {
     if(!IsClientValid(client))
     {
-        return Plugin_Handled;
-    }
-
-    if (!GroupStatus_IsClientInGroup(client))
-    {
-        ConVar cvar = FindConVar("groupstatus_url");
-
-        if (cvar != null)
-        {
-            char sURL[256], sName[64];
-            cvar.GetString(sName, sizeof(sName));
-            Format(sURL, sizeof(sURL), "https://steamcommunity.com/groups/%s", sName);
-
-            CPrintToChat(client, "%T", "In Group: No", client, sName);
-        }
-
         return Plugin_Handled;
     }
     
